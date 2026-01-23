@@ -5,6 +5,7 @@ import { Cliente, Contrato } from '../../../../models/vortex.model';
 import { catchError, Subscription, tap } from 'rxjs';
 import Swal from 'sweetalert2';
 import moment from 'moment';
+import { ContratoService } from '../../../services/contrato.service';
 
 @Component({
     selector: 'app-crear-contrato',
@@ -19,6 +20,7 @@ export class CrearContratoComponent {
 
     private fb = inject(FormBuilder);
     private clienteService = inject(ClienteService);
+    private contratoService = inject(ContratoService);
 
     form: FormGroup = this.fb.group({
         id_cliente: [null, [Validators.required]],
@@ -53,8 +55,7 @@ export class CrearContratoComponent {
                 this.loading = false;
             }),
             catchError((error) => {
-                console.error('Error cargando clientes:', error);
-                this.errorMessage =
+                this.errorMessage = error?.error?.message ||
                     'No se pudieron cargar los clientes. Verifica la API /clientes.';
                 throw error;
             }),
@@ -81,7 +82,7 @@ export class CrearContratoComponent {
         this.errorMessage = '';
         this.contratoCreado = null;
 
-        const contrato = this.clienteService.crearContrato(this.form.value).pipe(
+        const contrato = this.contratoService.crearContrato(this.form.value).pipe(
             tap((contrato) => {
                 this.contratoCreado = contrato;
                 this.loading = false;
@@ -99,8 +100,7 @@ export class CrearContratoComponent {
                 })
             }),
             catchError((error) => {
-                console.error('Error creando contrato:', error);
-                this.errorMessage = 'Ocurrió un error creando el contrato.';
+                this.errorMessage = error?.error?.message || 'Ocurrió un error creando el contrato.';
                 this.loading = false;
                 throw error;
             }),
@@ -109,13 +109,12 @@ export class CrearContratoComponent {
     }
 
     cargarContratos(): void {
-        const contratos = this.clienteService.listarContratos().pipe(
+        const contratos = this.contratoService.listarContratos().pipe(
             tap((contrato) => {
                 this.listaContratos = contrato
             }),
             catchError((error) => {
-                console.error('Error cargando clientes:', error);
-                this.errorMessage =
+                this.errorMessage = error?.error?.message ||
                     'No se pudieron cargar los clientes. Verifica la API /clientes.';
                 throw error;
             }),

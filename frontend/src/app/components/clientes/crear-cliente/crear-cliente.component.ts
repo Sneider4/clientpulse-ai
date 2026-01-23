@@ -62,30 +62,29 @@ export class CrearClienteComponent {
         this.loading = true;
         this.errorMessage = '';
         this.clienteCreado = null;
-        const cliente = this.clienteService.crearCliente(this.form.value).pipe(
-            tap((cliente) => {
-                this.clienteCreado = cliente;
-                this.loading = false;
-                Swal.fire({
-                    title: 'Cliente creado',
-                    text: 'Se ha creado exitosamente el cliente.',
-                    icon: 'success',
-                    iconColor: '#28a745',
-                    confirmButtonColor: '#0d6efd',
-                    confirmButtonText: 'Aceptar',
-                    allowOutsideClick: false
-                })
-                this.form.reset();
-                this.cargarClientes();
-            }),
-            catchError((error) => {
-                console.error('Error creando cliente:', error);
-                this.errorMessage = 'Ocurrió un error creando el cliente.';
-                this.loading = false;
-                throw error;
-            }),
-        ).subscribe();
-        this.subscriptions.add(cliente);
+            const cliente = this.clienteService.crearCliente(this.form.value).pipe(
+                tap((cliente) => {
+                    this.clienteCreado = cliente;
+                    this.loading = false;
+                    Swal.fire({
+                        title: 'Cliente creado',
+                        text: 'Se ha creado exitosamente el cliente.',
+                        icon: 'success',
+                        iconColor: '#28a745',
+                        confirmButtonColor: '#0d6efd',
+                        confirmButtonText: 'Aceptar',
+                        allowOutsideClick: false
+                    })
+                    this.form.reset();
+                    this.cargarClientes();
+                }),
+                catchError((error) => {
+                    this.errorMessage = error?.error?.message ||    'Ocurrió un error creando el cliente.';
+                    this.loading = false;
+                    throw error;
+                }),
+            ).subscribe();
+            this.subscriptions.add(cliente);
     }
 
     cargarClientes(): void {
@@ -95,8 +94,7 @@ export class CrearClienteComponent {
                 console.log('Clientes cargados:', data);
             }),
             catchError((error) => {
-                console.error('Error cargando clientes:', error);
-                this.errorMessage =
+                this.errorMessage = error?.error?.message ||
                     'No se pudieron cargar los clientes. Verifica la API /clientes.';
                 throw error;
             }),

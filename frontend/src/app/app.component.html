@@ -29,14 +29,12 @@
                 <i class="bi bi-speedometer2 me-2"></i>
                 Dashboard
             </a>
-        }
 
-        <a [routerLink]="['/nuevo-ticket']" routerLinkActive="active" class="btn btn-light text-start">
-            <i class="bi bi-plus-circle me-2"></i>
-            Nuevo ticket
-        </a>
+            <a [routerLink]="['/nuevo-ticket']" routerLinkActive="active" class="btn btn-light text-start">
+                <i class="bi bi-plus-circle me-2"></i>
+                Nuevo ticket
+            </a>
 
-        @if (auth.isLoggedIn()) {
             <a [routerLink]="['/tickets']" routerLinkActive="active" class="btn btn-light text-start">
                 <i class="bi bi-list-check me-2"></i>
                 Tickets
@@ -140,38 +138,25 @@
             <!-- Links de navegación -->
             <ul class="nav nav-pills flex-column mb-auto py-2">
                 @if (auth.isLoggedIn()) {
-                    <li class="nav-item">
-                        <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" class="nav-link custom-link d-flex align-items-center gap-3" [attr.title]="isSidebarCollapsed ? 'Dashboard' : null">
-                            <i class="bi bi-speedometer2 sidebar-icon fs-5"></i>
-                            <span class="nav-label">Dashboard</span>
-                        </a>
-                    </li>
-                }
-                <li class="nav-item">
-                    <a [routerLink]="['/nuevo-ticket']" routerLinkActive="active" class="nav-link custom-link d-flex align-items-center gap-3" [attr.title]="isSidebarCollapsed ? 'Nuevo ticket' : null">
-                        <i class="bi bi-plus-circle sidebar-icon fs-5"></i>
-                        <span class="nav-label">Nuevo ticket</span>
-                    </a>
-                </li>
-                @if (auth.isLoggedIn()) {
-                    <li class="nav-item">
-                        <a [routerLink]="['/tickets']" routerLinkActive="active" class="nav-link custom-link d-flex align-items-center gap-3" [attr.title]="isSidebarCollapsed ? 'Tickets' : null">
-                            <i class="bi bi-list-check sidebar-icon fs-5"></i>
-                            <span class="nav-label">Tickets</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a [routerLink]="['/clientes/nuevo']" routerLinkActive="active" class="nav-link custom-link d-flex align-items-center gap-3" [attr.title]="isSidebarCollapsed ? 'Clientes' : null">
-                            <i class="bi bi-people sidebar-icon fs-5"></i>
-                            <span class="nav-label">Clientes</span>
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a [routerLink]="['/contratos/nuevo']" routerLinkActive="active" class="nav-link custom-link d-flex align-items-center gap-3" [attr.title]="isSidebarCollapsed ? 'Contratos' : null">
-                            <i class="bi bi-journal-text sidebar-icon fs-5"></i>
-                            <span class="nav-label">Contratos</span>
-                        </a>
-                    </li>
+                    @for (item of visibleItems(); track item.route) {
+                        <li class="nav-item">
+                            <a [routerLink]="item.route" routerLinkActive="active" class="nav-link custom-link d-flex align-items-center gap-3" [attr.title]="isSidebarCollapsed ? item.label : null">
+                                @if (item.icon) {
+                                    <i [class]="'bi ' + item.icon + ' sidebar-icon fs-5'"></i>
+                                }
+                                <span class="nav-label">{{ item.label }}</span>
+                            </a>
+                        </li>
+                    }
+                } @else {
+                    <div class="text-center my-4">
+                        <div class="sidebar-avatar mb-3">
+                            <img src="/assets/images/avatar.png" alt="Bienvenido" class="img-fluid avatar-img" />
+                        </div>
+
+                        <h4 class="fw-semibold mb-1">¡Hola!</h4>
+                        <p class="text-muted small mb-0">Para ver tu panel y continuar con la navegación, por favor inicia sesión.</p>
+                    </div>
                 }
             </ul>
             <div class="mt-auto d-none d-lg-block">
@@ -179,14 +164,14 @@
                     @if (!auth.isLoggedIn()) {
                         <button type="button" class="btn btn-primary w-100" (click)="goToLogin()" [attr.title]="isSidebarCollapsed ? 'Iniciar sesión' : null">
                             <i class="bi bi-box-arrow-right fs-5" *ngIf="isSidebarCollapsed"></i>
-                            <span *ngIf="!isSidebarCollapsed">Iniciar sesión</span>
+                            <span *ngIf="!isSidebarCollapsed" class="fw-bold">Iniciar sesión</span>
                         </button>
                     } @else {
                         <div class="d-flex flex-column gap-2">
                             <small class="text-muted text-center">Sesión: admin</small>
                             <button type="button" class="btn btn-outline-danger w-100" (click)="logout()" [attr.title]="isSidebarCollapsed ? 'Cerrar sesión' : null">
                                 <i class="bi bi-box-arrow-left fs-5" *ngIf="isSidebarCollapsed"></i>
-                                <span *ngIf="!isSidebarCollapsed">Cerrar sesión</span>
+                                <span *ngIf="!isSidebarCollapsed" class="fw-bold">Cerrar sesión</span>
                             </button>
                         </div>
                     }

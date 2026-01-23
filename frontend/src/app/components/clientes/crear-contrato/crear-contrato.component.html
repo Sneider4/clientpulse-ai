@@ -1,6 +1,9 @@
 <div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center">
-        <h1 class="fw-bold mb-3">Contratos</h1>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="fw-bold mb-1">Contratos</h1>
+            <p class="text-muted mb-0">Visualización y creación de los clientes.</p>
+        </div>
         @if (!booleanCrearContrato) {
             <button type="button" class="btn btn-outline-primary" (click)="crearC()">Crear contrato</button>
         } @else {
@@ -8,148 +11,154 @@
         }
     </div>
 
-    @if (booleanCrearContrato) {
-        <div class="container mt-4 mb-5">
-            <div class="row justify-content-center ju">
-                <div class="col-12">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <div class="mt-3">
-                                <h3 class="fw-bold mb-3">Nuevo Contrato</h3>
-                            </div>
-                            <p class="text-muted mb-4">Registra un contrato asociado a un cliente existente.</p>
-                            <form [formGroup]="form" (ngSubmit)="crearContrato()" class="row g-3">
-                                <div class="mb-3 col-md-5 col-8">
-                                    <label class="form-label fw-bold" for="id_cliente">Cliente</label>
-                                    <select id="id_cliente" class="form-select" formControlName="id_cliente">
-                                        <option [ngValue]="null">Seleccione un cliente...</option>
-                                        @for (cliente of clientes; track $index) {
-                                            <option [value]="cliente.id_cliente">{{ cliente.nombre }} ({{ cliente.nit }})</option>
+    @if (errorMessage) {
+        <div class="alert alert-danger">
+            {{ errorMessage }}
+        </div>
+    } @else {
+        @if (booleanCrearContrato) {
+            <div class="container mt-4 mb-5">
+                <div class="row justify-content-center ju">
+                    <div class="col-12">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <div class="mt-3">
+                                    <h3 class="fw-bold mb-3">Nuevo Contrato</h3>
+                                </div>
+                                <p class="text-muted mb-4">Registra un contrato asociado a un cliente existente.</p>
+                                <form [formGroup]="form" (ngSubmit)="crearContrato()" class="row g-3">
+                                    <div class="mb-3 col-md-5 col-8">
+                                        <label class="form-label fw-bold" for="id_cliente">Cliente</label>
+                                        <select id="id_cliente" class="form-select" formControlName="id_cliente">
+                                            <option [ngValue]="null">Seleccione un cliente...</option>
+                                            @for (cliente of clientes; track $index) {
+                                                <option [value]="cliente.id_cliente">{{ cliente.nombre }} ({{ cliente.nit }})</option>
+                                            }
+                                        </select>
+                                        @if (hasError("id_cliente", "required")) {
+                                            <div class="text-danger small">Debe seleccionar un cliente.</div>
                                         }
-                                    </select>
-                                    @if (hasError("id_cliente", "required")) {
-                                        <div class="text-danger small">Debe seleccionar un cliente.</div>
+                                    </div>
+
+                                    <div class="mb-3 col-md-2 col-4">
+                                        <label class="form-label fw-bold" for="nivel_servicio">Service Level</label>
+                                        <select id="nivel_servicio" class="form-select" formControlName="nivel_servicio">
+                                            <option value="null">Seleccionar nivel de servicio...</option>
+                                            <option value="DIAMOND">Diamond</option>
+                                            <option value="GOLD">Gold</option>
+                                            <option value="SILVER">Silver</option>
+                                            <option value="BRONZE">Bronze</option>
+                                        </select>
+                                        @if (hasError("nivel_servicio", "required")) {
+                                            <div class="text-danger small">El nivel de servicio es obligatorio.</div>
+                                        }
+                                    </div>
+
+                                    <div class="mb-3 col-md-5 col-8">
+                                        <label class="form-label fw-bold" for="nombre_proyecto">Nombre del proyecto / contrato</label>
+                                        <input id="nombre_proyecto" type="text" class="form-control" formControlName="nombre_proyecto" />
+                                        @if (hasError("nombre_proyecto", "required")) {
+                                            <div class="text-danger small">El nombre del proyecto es obligatorio.</div>
+                                        }
+                                    </div>
+
+                                    <div class="mb-3 col-md-4 col-4">
+                                        <label class="form-label fw-bold" for="valor_mensual">Valor mensual</label>
+                                        <input id="valor_mensual" type="number" class="form-control" formControlName="valor_mensual" min="0" />
+                                        @if (hasError("valor_mensual", "required")) {
+                                            <div class="text-danger small">El valor mensual es obligatorio.</div>
+                                        }
+                                    </div>
+
+                                    <div class="col-md-4 col-6 mb-3">
+                                        <label class="form-label fw-bold" for="fecha_inicio">Fecha inicio</label>
+                                        <input id="fecha_inicio" type="date" class="form-control" formControlName="fecha_inicio" />
+                                        @if (hasError("fecha_inicio", "required")) {
+                                            <div class="text-danger small">La fecha de inicio es obligatoria.</div>
+                                        }
+                                    </div>
+
+                                    <div class="col-md-4 col-6 mb-3">
+                                        <label class="form-label fw-bold" for="fecha_fin">Fecha fin</label>
+                                        <input id="fecha_fin" type="date" class="form-control" formControlName="fecha_fin" />
+                                    </div>
+
+                                    <div class="d-flex justify-content-end">
+                                        <button type="submit" class="btn btn-primary" [disabled]="loading">
+                                            {{ loading ? "Guardando..." : "Crear Contrato" }}
+                                        </button>
+                                    </div>
+
+                                    @if (errorMessage) {
+                                        <div class="text-danger mt-3">
+                                            {{ errorMessage }}
+                                        </div>
                                     }
-                                </div>
+                                </form>
 
-                                <div class="mb-3 col-md-2 col-4">
-                                    <label class="form-label fw-bold" for="nivel_servicio">Service Level</label>
-                                    <select id="nivel_servicio" class="form-select" formControlName="nivel_servicio">
-                                        <option value="null">Seleccionar nivel de servicio...</option>
-                                        <option value="DIAMOND">Diamond</option>
-                                        <option value="GOLD">Gold</option>
-                                        <option value="SILVER">Silver</option>
-                                        <option value="BRONZE">Bronze</option>
-                                    </select>
-                                    @if (hasError("nivel_servicio", "required")) {
-                                        <div class="text-danger small">El nivel de servicio es obligatorio.</div>
-                                    }
-                                </div>
-
-                                <div class="mb-3 col-md-5 col-8">
-                                    <label class="form-label fw-bold" for="nombre_proyecto">Nombre del proyecto / contrato</label>
-                                    <input id="nombre_proyecto" type="text" class="form-control" formControlName="nombre_proyecto" />
-                                    @if (hasError("nombre_proyecto", "required")) {
-                                        <div class="text-danger small">El nombre del proyecto es obligatorio.</div>
-                                    }
-                                </div>
-
-                                <div class="mb-3 col-md-4 col-4">
-                                    <label class="form-label fw-bold" for="valor_mensual">Valor mensual</label>
-                                    <input id="valor_mensual" type="number" class="form-control" formControlName="valor_mensual" min="0" />
-                                    @if (hasError("valor_mensual", "required")) {
-                                        <div class="text-danger small">El valor mensual es obligatorio.</div>
-                                    }
-                                </div>
-
-                                <div class="col-md-4 col-6 mb-3">
-                                    <label class="form-label fw-bold" for="fecha_inicio">Fecha inicio</label>
-                                    <input id="fecha_inicio" type="date" class="form-control" formControlName="fecha_inicio" />
-                                    @if (hasError("fecha_inicio", "required")) {
-                                        <div class="text-danger small">La fecha de inicio es obligatoria.</div>
-                                    }
-                                </div>
-
-                                <div class="col-md-4 col-6 mb-3">
-                                    <label class="form-label fw-bold" for="fecha_fin">Fecha fin</label>
-                                    <input id="fecha_fin" type="date" class="form-control" formControlName="fecha_fin" />
-                                </div>
-
-                                <div class="d-flex justify-content-end">
-                                    <button type="submit" class="btn btn-primary" [disabled]="loading">
-                                        {{ loading ? "Guardando..." : "Crear Contrato" }}
-                                    </button>
-                                </div>
-
-                                @if (errorMessage) {
-                                    <div class="text-danger mt-3">
-                                        {{ errorMessage }}
+                                @if (contratoCreado) {
+                                    <div class="alert alert-success mt-4">
+                                        <h5 class="alert-heading mb-1">Contrato creado correctamente</h5>
+                                        <p class="mb-0">
+                                            <strong>ID:</strong>
+                                            {{ contratoCreado.id_contrato }}
+                                            <br />
+                                            <strong>Proyecto:</strong>
+                                            {{ contratoCreado.nombre_proyecto }}
+                                            <br />
+                                            <strong>Cliente ID:</strong>
+                                            {{ contratoCreado.id_cliente }}
+                                            <br />
+                                            <strong>Estado:</strong>
+                                            {{ contratoCreado.estado }}
+                                            <br />
+                                            <strong>Valor mensual:</strong>
+                                            {{ contratoCreado.valor_mensual }}
+                                        </p>
                                     </div>
                                 }
-                            </form>
-
-                            @if (contratoCreado) {
-                                <div class="alert alert-success mt-4">
-                                    <h5 class="alert-heading mb-1">Contrato creado correctamente</h5>
-                                    <p class="mb-0">
-                                        <strong>ID:</strong>
-                                        {{ contratoCreado.id_contrato }}
-                                        <br />
-                                        <strong>Proyecto:</strong>
-                                        {{ contratoCreado.nombre_proyecto }}
-                                        <br />
-                                        <strong>Cliente ID:</strong>
-                                        {{ contratoCreado.id_cliente }}
-                                        <br />
-                                        <strong>Estado:</strong>
-                                        {{ contratoCreado.estado }}
-                                        <br />
-                                        <strong>Valor mensual:</strong>
-                                        {{ contratoCreado.valor_mensual }}
-                                    </p>
-                                </div>
-                            }
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    }
+        }
 
-    @if (loading) {
-        <div>Cargando...</div>
-    }
-    @if (!loading) {
-        <div class="table-responsive" style="overflow-x: auto; max-height: 600px">
-            <table class="table table-striped mt-2">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Cliente</th>
-                        <th>Proyecto</th>
-                        <th>Inicio</th>
-                        <th>Fin</th>
-                        <th>Valor mensual</th>
-                        <th>Nivel servicio</th>
-                        <th>Estado</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @for (contrato of listaContratos; track $index) {
+        @if (loading) {
+            <div>Cargando...</div>
+        }
+        @if (!loading) {
+            <div class="table-responsive" style="overflow-x: auto; max-height: 600px">
+                <table class="table table-striped mt-2">
+                    <thead>
                         <tr>
-                            <td>{{ contrato.id_contrato }}</td>
-                            <td>{{ contrato.id_cliente }}</td>
-                            <td>{{ contrato.nombre_proyecto }}</td>
-                            <td>{{ formateadorFecha(contrato.fecha_inicio) }}</td>
-                            <td>{{ formateadorFecha(contrato.fecha_fin) || "-" }}</td>
-                            <td>{{ contrato.valor_mensual }}</td>
-                            <td>{{ contrato.nivel_servicio }}</td>
-                            <td>{{ contrato.estado }}</td>
+                            <th>ID</th>
+                            <th>Cliente</th>
+                            <th>Proyecto</th>
+                            <th>Inicio</th>
+                            <th>Fin</th>
+                            <th>Valor mensual</th>
+                            <th>Nivel servicio</th>
+                            <th>Estado</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+                    </thead>
+
+                    <tbody>
+                        @for (contrato of listaContratos; track $index) {
+                            <tr>
+                                <td>{{ contrato.id_contrato }}</td>
+                                <td>{{ contrato.id_cliente }}</td>
+                                <td>{{ contrato.nombre_proyecto }}</td>
+                                <td>{{ formateadorFecha(contrato.fecha_inicio) }}</td>
+                                <td>{{ formateadorFecha(contrato.fecha_fin) || "-" }}</td>
+                                <td>{{ contrato.valor_mensual }}</td>
+                                <td>{{ contrato.nivel_servicio }}</td>
+                                <td>{{ contrato.estado }}</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
     }
 </div>

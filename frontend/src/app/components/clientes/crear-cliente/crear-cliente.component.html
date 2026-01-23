@@ -1,127 +1,136 @@
 <div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center">
-        <h1 class="fw-bold mb-3">Clientes</h1>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="fw-bold mb-1">Clientes</h1>
+            <p class="text-muted mb-0">Visualización y creación de los clientes.</p>
+        </div>
         @if (!booleanCrearContrato) {
             <button type="button" class="btn btn-outline-primary" (click)="crearC()">Crear cliente</button>
         } @else {
             <button type="button" class="btn btn-outline-danger" (click)="crearC(true)">Cancelar</button>
         }
     </div>
-    @if (booleanCrearContrato) {
-        <div class="container mt-4">
-            <div class="row justify-content-center">
-                <div class="col-12">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <div class="mt-3">
-                                <h3 class="fw-bold mb-3">Nuevo Cliente</h3>
-                            </div>
-                            <p class="text-muted mb-4">Registra un cliente para luego asociarle contratos y tickets.</p>
+    @if (errorMessage) {
+        <div class="alert alert-danger">
+            {{ errorMessage }}
+        </div>
+    } @else {
+        @if (booleanCrearContrato) {
+            <div class="container mt-4">
+                <div class="row justify-content-center">
+                    <div class="col-12">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <div class="mt-3">
+                                    <h3 class="fw-bold mb-3">Nuevo Cliente</h3>
+                                </div>
+                                <p class="text-muted mb-4">Registra un cliente para luego asociarle contratos y tickets.</p>
 
-                            <form [formGroup]="form" (ngSubmit)="crearCliente()" class="row">
-                                <div class="mb-3 col-md-8 col-12">
-                                    <label class="form-label" for="nombre">Nombre</label>
-                                    <input id="nombre" type="text" class="form-control" formControlName="nombre" />
-                                    @if (hasError("nombre", "required")) {
-                                        <div class="text-danger small">El nombre es obligatorio.</div>
+                                <form [formGroup]="form" (ngSubmit)="crearCliente()" class="row">
+                                    <div class="mb-3 col-md-8 col-12">
+                                        <label class="form-label" for="nombre">Nombre</label>
+                                        <input id="nombre" type="text" class="form-control" formControlName="nombre" />
+                                        @if (hasError("nombre", "required")) {
+                                            <div class="text-danger small">El nombre es obligatorio.</div>
+                                        }
+                                    </div>
+
+                                    <div class="mb-3 col-md-4 col-7">
+                                        <label class="form-label" for="nit">NIT</label>
+                                        <input id="nit" type="text" class="form-control" formControlName="nit" />
+                                        @if (hasError("nit", "required")) {
+                                            <div class="text-danger small">El NIT es obligatorio.</div>
+                                        }
+                                    </div>
+
+                                    <div class="mb-3 col-md-4 col-5">
+                                        <label class="form-label" for="sector">Sector</label>
+                                        <input id="sector" type="text" class="form-control" formControlName="sector" placeholder="Banca, Educación, Tecnología, etc." />
+                                    </div>
+
+                                    <div class="mb-3 col-md-4 col-6">
+                                        <label class="form-label" for="fecha_inicio_relacion">Fecha inicio de relación</label>
+                                        <input id="fecha_inicio_relacion" type="date" class="form-control" formControlName="fecha_inicio_relacion" />
+                                        @if (hasError("fecha_inicio_relacion", "required")) {
+                                            <div class="text-danger small">La fecha de inicio es obligatoria.</div>
+                                        }
+                                    </div>
+
+                                    <div class="mb-3 col-md-4 col-6">
+                                        <label class="form-label" for="estado">Estado</label>
+                                        <select id="estado" class="form-select" formControlName="estado">
+                                            <option value="ACTIVO">ACTIVO</option>
+                                            <option value="INACTIVO">INACTIVO</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="d-flex justify-content-end">
+                                        <button type="submit" class="btn btn-primary" [disabled]="loading">
+                                            {{ loading ? "Guardando..." : "Crear Cliente" }}
+                                        </button>
+                                    </div>
+                                    @if (errorMessage) {
+                                        <div class="text-danger mt-3">
+                                            {{ errorMessage }}
+                                        </div>
                                     }
-                                </div>
+                                </form>
 
-                                <div class="mb-3 col-md-4 col-7">
-                                    <label class="form-label" for="nit">NIT</label>
-                                    <input id="nit" type="text" class="form-control" formControlName="nit" />
-                                    @if (hasError("nit", "required")) {
-                                        <div class="text-danger small">El NIT es obligatorio.</div>
-                                    }
-                                </div>
-
-                                <div class="mb-3 col-md-4 col-5">
-                                    <label class="form-label" for="sector">Sector</label>
-                                    <input id="sector" type="text" class="form-control" formControlName="sector" placeholder="Banca, Educación, Tecnología, etc." />
-                                </div>
-
-                                <div class="mb-3 col-md-4 col-6">
-                                    <label class="form-label" for="fecha_inicio_relacion">Fecha inicio de relación</label>
-                                    <input id="fecha_inicio_relacion" type="date" class="form-control" formControlName="fecha_inicio_relacion" />
-                                    @if (hasError("fecha_inicio_relacion", "required")) {
-                                        <div class="text-danger small">La fecha de inicio es obligatoria.</div>
-                                    }
-                                </div>
-
-                                <div class="mb-3 col-md-4 col-6">
-                                    <label class="form-label" for="estado">Estado</label>
-                                    <select id="estado" class="form-select" formControlName="estado">
-                                        <option value="ACTIVO">ACTIVO</option>
-                                        <option value="INACTIVO">INACTIVO</option>
-                                    </select>
-                                </div>
-
-                                <div class="d-flex justify-content-end">
-                                    <button type="submit" class="btn btn-primary" [disabled]="loading">
-                                        {{ loading ? "Guardando..." : "Crear Cliente" }}
-                                    </button>
-                                </div>
-                                @if (errorMessage) {
-                                    <div class="text-danger mt-3">
-                                        {{ errorMessage }}
+                                @if (clienteCreado) {
+                                    <div class="alert alert-success mt-4">
+                                        <h5 class="alert-heading mb-1">Cliente creado correctamente</h5>
+                                        <p class="mb-0">
+                                            <strong>ID:</strong>
+                                            {{ clienteCreado.id_cliente }}
+                                            <br />
+                                            <strong>Nombre:</strong>
+                                            {{ clienteCreado.nombre }}
+                                            <br />
+                                            <strong>NIT:</strong>
+                                            {{ clienteCreado.nit }}
+                                            <br />
+                                            <strong>Estado:</strong>
+                                            {{ clienteCreado.estado }}
+                                        </p>
                                     </div>
                                 }
-                            </form>
-
-                            @if (clienteCreado) {
-                                <div class="alert alert-success mt-4">
-                                    <h5 class="alert-heading mb-1">Cliente creado correctamente</h5>
-                                    <p class="mb-0">
-                                        <strong>ID:</strong>
-                                        {{ clienteCreado.id_cliente }}
-                                        <br />
-                                        <strong>Nombre:</strong>
-                                        {{ clienteCreado.nombre }}
-                                        <br />
-                                        <strong>NIT:</strong>
-                                        {{ clienteCreado.nit }}
-                                        <br />
-                                        <strong>Estado:</strong>
-                                        {{ clienteCreado.estado }}
-                                    </p>
-                                </div>
-                            }
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    }
-    @if (loading) {
-        <div>Cargando...</div>
-    }
-    @if (!loading) {
-        <div class="table-responsive" style="overflow-x: auto; max-height: 600px;">
-            <table class="table table-striped mt-5">
-            <thead>
-                <tr>
-                <th>Nombre empresa</th>
-                <th>Nit</th>
-                <th>Sector</th>
-                <th>Fecha vinculación</th>
-                <th class="text-center">N° Contratos</th>
-                <th>Estado</th>
-                </tr>
-            </thead>
+        }
+        @if (loading) {
+            <div>Cargando...</div>
+        }
+        @if (!loading) {
+            <div class="table-responsive" style="overflow-x: auto; max-height: 600px">
+                <table class="table table-striped mt-5">
+                    <thead>
+                        <tr>
+                            <th>Nombre empresa</th>
+                            <th>Nit</th>
+                            <th>Sector</th>
+                            <th>Fecha vinculación</th>
+                            <th class="text-center">N° Contratos</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
 
-            <tbody>
-                @for (cliente of clientes; track $index) {
-                <tr [routerLink]="['/cliente-detalle', cliente.id_cliente]" style="cursor: pointer">
-                    <td>{{ cliente.nombre }}</td>
-                    <td>{{ cliente.nit }}</td>
-                    <td>{{ cliente.sector }}</td>
-                    <td>{{ formateadorFecha(cliente.fecha_inicio_relacion) || "---" }}</td>
-                    <td class="text-center">{{ cliente.cantidad_contratos }}</td>
-                    <td>{{ cliente.estado }}</td>
-                </tr>
-                }
-            </tbody>
-            </table>
-        </div>
+                    <tbody>
+                        @for (cliente of clientes; track $index) {
+                            <tr [routerLink]="['/cliente-detalle', cliente.id_cliente]" style="cursor: pointer">
+                                <td>{{ cliente.nombre }}</td>
+                                <td>{{ cliente.nit }}</td>
+                                <td>{{ cliente.sector }}</td>
+                                <td>{{ formateadorFecha(cliente.fecha_inicio_relacion) || "---" }}</td>
+                                <td class="text-center">{{ cliente.cantidad_contratos }}</td>
+                                <td>{{ cliente.estado }}</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
     }
 </div>

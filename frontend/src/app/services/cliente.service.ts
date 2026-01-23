@@ -24,13 +24,7 @@ export class ClienteService {
         return this.http.post<Cliente>(`${this.baseUrl}/insertar-cliente`, data);
     }
 
-    crearContrato(data: any): Observable<Contrato> {
-        return this.http.post<Contrato>(`${this.baseUrl}/insertar-contrato`, data);
-    }
 
-    listarContratos(): Observable<Contrato[]> {
-        return this.http.get<Contrato[]>(`${this.baseUrl}/consultar-contratos`);
-    }
 
     listarClientes(): Observable<Cliente[]> {
         return this.http.get<Cliente[]>(`${this.baseUrl}/consultar-clientes`);

@@ -11,107 +11,108 @@
         <div class="alert alert-danger">
             {{ errorMessage }}
         </div>
-    }
-    @if (!loading && tickets.length > 0) {
-        <div class="table-responsive mt-4" style="overflow-x: auto; max-height: 600px;">
-            <table class="table table-hover align-middle">
-            <thead class="table-light" style="position: sticky; top: 0; z-index: 10;">
-                <tr>
-                <th>ID</th>
-                <th>Contrato</th>
-                <th>Título</th>
-                <th>Prioridad</th>
-                <th>Sentimiento</th>
-                <th>Riesgo churn</th>
-                <th>Score</th>
-                <th>Phishing</th>
-                <th>Datos sensibles</th>
-                <th>Fecha creación</th>
-                <th>Estado</th>
-                </tr>
-            </thead>
-            <tbody>
-                @for (item of tickets | slice: (currentPage - 1) * pageSize : currentPage * pageSize; track item.ticket.id_ticket) {
-                <tr>
-                    <td>{{ item.ticket.id_ticket }}</td>
-                    <td class="text-center">{{ item.ticket.id_contrato }}</td>
-                    <td class="fw-semibold" [routerLink]="['/detalle-ticket', item.ticket.id_ticket]" style="cursor: pointer">
-                    {{ item.ticket.titulo }}
-                    </td>
-                    <td>{{ item.ticket.prioridad }}</td>
-                    <td>
-                    <span class="badge" [ngClass]="getSentimientoClass(item.analisis.sentimiento || null)">
-                        {{ item.analisis.sentimiento || "N/D" }}
-                    </span>
-                    </td>
-                    <td>
-                    <span class="badge" [ngClass]="getRiesgoClass(item.analisis.riesgo_churn || null)">
-                        {{ item.analisis.riesgo_churn || "N/D" }}
-                    </span>
-                    </td>
-                    <td>{{ item.analisis.score_churn ?? "-" }}</td>
-                    <td>
-                    {{ item.analisis.es_potencial_phishing ? "⚠️ Sí" : "No" }}
-                    </td>
-                    <td>
-                    {{ item.analisis.tiene_datos_sensibles ? "⚠️ Sí" : "No" }}
-                    </td>
-                    <td>{{ item.ticket.fecha_creacion | date: "short" }}</td>
-                    <td>
-                    <button
-                        type="button"
-                        class="btn"
-                        [ngClass]="{
-                        'btn-outline-warning': item.ticket.estado === 'ENTREGADO',
-                        'btn-outline-info': item.ticket.estado === 'EN_PROCESO',
-                        'btn-outline-success': item.ticket.estado === 'CERRADO',
-                        'btn-outline-danger': item.ticket.estado === 'BLOQUEADO_POR_SEGURIDAD',
-                        }"
-                    >
-                        @if (item.ticket.estado === "BLOQUEADO_POR_SEGURIDAD") {
-                        <i class="bi bi-exclamation-triangle text-danger me-1"></i>
+    } @else {
+        @if (!loading && tickets.length > 0) {
+            <div class="table-responsive mt-4" style="overflow-x: auto; max-height: 600px">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light" style="position: sticky; top: 0; z-index: 10">
+                        <tr>
+                            <th>ID</th>
+                            <th>Contrato</th>
+                            <th>Título</th>
+                            <th>Prioridad</th>
+                            <th>Sentimiento</th>
+                            <th>Riesgo churn</th>
+                            <th>Score</th>
+                            <th>Phishing</th>
+                            <th>Datos sensibles</th>
+                            <th>Fecha creación</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (item of tickets | slice: (currentPage - 1) * pageSize : currentPage * pageSize; track item.ticket.id_ticket) {
+                            <tr>
+                                <td>{{ item.ticket.id_ticket }}</td>
+                                <td class="text-center">{{ item.ticket.id_contrato }}</td>
+                                <td class="fw-semibold" [routerLink]="['/detalle-ticket', item.ticket.id_ticket]" style="cursor: pointer">
+                                    {{ item.ticket.titulo }}
+                                </td>
+                                <td>{{ item.ticket.prioridad }}</td>
+                                <td>
+                                    <span class="badge" [ngClass]="getSentimientoClass(item.analisis.sentimiento || null)">
+                                        {{ item.analisis.sentimiento || "N/D" }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge" [ngClass]="getRiesgoClass(item.analisis.riesgo_churn || null)">
+                                        {{ item.analisis.riesgo_churn || "N/D" }}
+                                    </span>
+                                </td>
+                                <td>{{ item.analisis.score_churn ?? "-" }}</td>
+                                <td>
+                                    {{ item.analisis.es_potencial_phishing ? "⚠️ Sí" : "No" }}
+                                </td>
+                                <td>
+                                    {{ item.analisis.tiene_datos_sensibles ? "⚠️ Sí" : "No" }}
+                                </td>
+                                <td>{{ item.ticket.fecha_creacion | date: "short" }}</td>
+                                <td>
+                                    <button
+                                        type="button"
+                                        class="btn"
+                                        [ngClass]="{
+                                            'btn-outline-warning': item.ticket.estado === 'ENTREGADO',
+                                            'btn-outline-info': item.ticket.estado === 'EN_PROCESO',
+                                            'btn-outline-success': item.ticket.estado === 'CERRADO',
+                                            'btn-outline-danger': item.ticket.estado === 'BLOQUEADO_POR_SEGURIDAD',
+                                        }"
+                                    >
+                                        @if (item.ticket.estado === "BLOQUEADO_POR_SEGURIDAD") {
+                                            <i class="bi bi-exclamation-triangle text-danger me-1"></i>
+                                        }
+                                        {{ item.ticket.estado }}
+                                    </button>
+                                </td>
+                            </tr>
                         }
-                        {{ item.ticket.estado }}
-                    </button>
-                    </td>
-                </tr>
-                }
-            </tbody>
-            </table>
-        </div>
-
-        <!-- Paginación -->
-        @if (totalPages > 1) {
-            <div class="d-flex justify-content-between align-items-center mt-3">
-                <small class="text-muted">
-                    Mostrando
-                    {{ (currentPage - 1) * pageSize + 1 }} -
-                    {{ currentPage * pageSize > tickets.length ? tickets.length : currentPage * pageSize }}
-                    de {{ tickets.length }} registros
-                </small>
-
-                <nav aria-label="Paginación de tickets">
-                    <ul class="pagination mb-0">
-                        <li class="page-item" [class.disabled]="currentPage === 1">
-                            <button class="page-link" type="button" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">Anterior</button>
-                        </li>
-
-                        @for (page of pages; track page) {
-                            <li class="page-item" [class.active]="page === currentPage">
-                                <button class="page-link" type="button" (click)="goToPage(page)">
-                                    {{ page }}
-                                </button>
-                            </li>
-                        }
-
-                        <li class="page-item" [class.disabled]="currentPage === totalPages">
-                            <button class="page-link" type="button" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">Siguiente</button>
-                        </li>
-                    </ul>
-                </nav>
+                    </tbody>
+                </table>
             </div>
+
+            <!-- Paginación -->
+            @if (totalPages > 1) {
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <small class="text-muted">
+                        Mostrando
+                        {{ (currentPage - 1) * pageSize + 1 }} -
+                        {{ currentPage * pageSize > tickets.length ? tickets.length : currentPage * pageSize }}
+                        de {{ tickets.length }} registros
+                    </small>
+
+                    <nav aria-label="Paginación de tickets">
+                        <ul class="pagination mb-0">
+                            <li class="page-item" [class.disabled]="currentPage === 1">
+                                <button class="page-link" type="button" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">Anterior</button>
+                            </li>
+
+                            @for (page of pages; track page) {
+                                <li class="page-item" [class.active]="page === currentPage">
+                                    <button class="page-link" type="button" (click)="goToPage(page)">
+                                        {{ page }}
+                                    </button>
+                                </li>
+                            }
+
+                            <li class="page-item" [class.disabled]="currentPage === totalPages">
+                                <button class="page-link" type="button" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">Siguiente</button>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            }
+        } @else if (!loading && tickets.length === 0) {
+            <div class="alert alert-info mb-0">No hay tickets registrados todavía.</div>
         }
-    } @else if (!loading && tickets.length === 0) {
-        <div class="alert alert-info mb-0">No hay tickets registrados todavía.</div>
     }
 </div>

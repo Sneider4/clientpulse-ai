@@ -15,10 +15,10 @@
 
                 <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
                     <div class="mb-3">
-                        <label for="username" class="form-label fw-semibold">Usuario</label>
+                        <label for="username" class="form-label fw-semibold">Correo</label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="bi bi-person"></i></span>
-                            <input id="username" type="text" class="form-control" formControlName="username" placeholder="admin" required />
+                            <input id="correo" type="email" class="form-control" formControlName="correo" placeholder="admin" required />
                         </div>
                     </div>
 

@@ -41,7 +41,6 @@ export class ListaTicketsComponent implements OnInit {
             }),
             catchError((error) => {
                 this.loading = false;
-                console.error(error);
                 this.errorMessage =
                     error?.error?.message || 'Error al cargar la lista de tickets';
                 throw error;

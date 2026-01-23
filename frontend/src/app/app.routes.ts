@@ -8,54 +8,60 @@ import { CrearContratoComponent } from './components/clientes/crear-contrato/cre
 import { authGuard } from './services/auth/auth.guard';
 import { LoginComponent } from './components/login/login/login.component';
 import { DetalleTicketComponent } from './components/tickets/detalle-ticket/detalle-ticket.component';
+import { PerdidoComponent } from './components/error/perdido/perdido.component';
 
 export const routes: Routes = [
 
-  {
-    path: 'login',
-    component: LoginComponent,
-  },
-  {
-    path: 'nuevo-ticket',
-    component: NuevoTicketComponent, // ruta siempre visible (pública)
-  },
-  {
-    path: 'dashboard',
-    component: DashboardComponent,
-    canMatch: [authGuard],
-  },
-  {
-    path: 'tickets',
-    component: ListaTicketsComponent,
-    canMatch: [authGuard],
-  },
-  {
-    path: 'cliente-detalle/:id',
-    component: ClienteDetalleComponent,
-    canMatch: [authGuard],
-  },
-  {
-    path: 'detalle-ticket/:id',
-    component: DetalleTicketComponent,
-    canMatch: [authGuard],
-  },
-  {
-    path: 'clientes/nuevo',
-    component: CrearClienteComponent ,
-    canMatch: [authGuard]
-  },
-  {
-    path: 'contratos/nuevo',
-    component: CrearContratoComponent ,
-    canMatch: [authGuard],
-  },
-  {
-    path: '',
-    pathMatch: 'full',
-    redirectTo: 'nuevo-ticket',  // al iniciar, va a nuevo-ticket
-  },
-  {
-    path: '**',
-    redirectTo: 'nuevo-ticket',
-  },
+    {
+        path: 'login',
+        component: LoginComponent,
+    },
+    {
+        path: 'nuevo-ticket',
+        component: NuevoTicketComponent,
+        canMatch: [authGuard],
+    },
+    {
+        path: 'dashboard',
+        component: DashboardComponent,
+        canMatch: [authGuard],
+    },
+    {
+        path: 'tickets',
+        component: ListaTicketsComponent,
+        canMatch: [authGuard],
+    },
+    {
+        path: 'cliente-detalle/:id',
+        component: ClienteDetalleComponent,
+        canMatch: [authGuard],
+    },
+    {
+        path: 'detalle-ticket/:id',
+        component: DetalleTicketComponent,
+        canMatch: [authGuard],
+    },
+    {
+        path: 'clientes/nuevo',
+        component: CrearClienteComponent,
+        canMatch: [authGuard]
+    },
+    {
+        path: 'contratos/nuevo',
+        component: CrearContratoComponent,
+        canMatch: [authGuard],
+    },
+    {
+        path: 'error',
+        component: PerdidoComponent,
+    },
+    {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: 'login',  // al iniciar, va a login
+    },
+    {
+        path: '**',
+        redirectTo: 'error',
+    },
 ];
