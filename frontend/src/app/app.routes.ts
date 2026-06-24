@@ -6,49 +6,55 @@ import { ClienteDetalleComponent } from './components/clientes/cliente-detalle/c
 import { CrearClienteComponent } from './components/clientes/crear-cliente/crear-cliente.component';
 import { CrearContratoComponent } from './components/clientes/crear-contrato/crear-contrato.component';
 import { authGuard } from './services/auth/auth.guard';
+import { moduleGuard } from './services/auth/module.guard';
 import { LoginComponent } from './components/login/login/login.component';
 import { DetalleTicketComponent } from './components/tickets/detalle-ticket/detalle-ticket.component';
 import { PerdidoComponent } from './components/error/perdido/perdido.component';
+import { SinAccesoComponent } from './components/error/sin-acceso/sin-acceso.component';
 
 export const routes: Routes = [
-
     {
         path: 'login',
         component: LoginComponent,
     },
     {
-        path: 'nuevo-ticket',
-        component: NuevoTicketComponent,
-        canMatch: [authGuard],
-    },
-    {
         path: 'dashboard',
         component: DashboardComponent,
-        canMatch: [authGuard],
+        canMatch: [moduleGuard('DASHBOARD', 'DASHBOARD_VER')],
+    },
+    {
+        path: 'nuevo-ticket',
+        component: NuevoTicketComponent,
+        canMatch: [moduleGuard('TICKETS', 'TICKETS_CREAR')],
     },
     {
         path: 'tickets',
         component: ListaTicketsComponent,
-        canMatch: [authGuard],
-    },
-    {
-        path: 'cliente-detalle/:id',
-        component: ClienteDetalleComponent,
-        canMatch: [authGuard],
+        canMatch: [moduleGuard('TICKETS', 'TICKETS_VER')],
     },
     {
         path: 'detalle-ticket/:id',
         component: DetalleTicketComponent,
-        canMatch: [authGuard],
+        canMatch: [moduleGuard('TICKETS', 'TICKETS_VER')],
     },
     {
         path: 'clientes/nuevo',
         component: CrearClienteComponent,
-        canMatch: [authGuard]
+        canMatch: [moduleGuard('CLIENTES', 'CLIENTES_VER')],
+    },
+    {
+        path: 'cliente-detalle/:id',
+        component: ClienteDetalleComponent,
+        canMatch: [moduleGuard('CLIENTES', 'CLIENTES_VER')],
     },
     {
         path: 'contratos/nuevo',
         component: CrearContratoComponent,
+        canMatch: [moduleGuard('CONTRATOS', 'CONTRATOS_VER')],
+    },
+    {
+        path: 'sin-acceso',
+        component: SinAccesoComponent,
         canMatch: [authGuard],
     },
     {
@@ -58,7 +64,7 @@ export const routes: Routes = [
     {
         path: '',
         pathMatch: 'full',
-        redirectTo: 'login',  // al iniciar, va a login
+        redirectTo: 'login',
     },
     {
         path: '**',

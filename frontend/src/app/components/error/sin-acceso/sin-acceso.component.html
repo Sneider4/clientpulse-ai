@@ -1,0 +1,13 @@
+<div class="d-flex flex-column align-items-center justify-content-center" style="min-height: 70vh; text-align: center;">
+    <i class="bi bi-shield-lock text-warning" style="font-size: 5rem;"></i>
+    <h1 class="fw-bold mt-3 mb-1">Acceso restringido</h1>
+    <p class="text-muted mb-4">No tienes permisos para ver esta sección.<br>Contacta a tu administrador si crees que es un error.</p>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary" (click)="volver()">
+            <i class="bi bi-arrow-left me-1"></i> Volver
+        </button>
+        <button class="btn btn-primary" (click)="irInicio()">
+            <i class="bi bi-speedometer2 me-1"></i> Ir al dashboard
+        </button>
+    </div>
+</div>

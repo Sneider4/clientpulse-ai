@@ -1,10 +1,9 @@
 // ClientPulse AI — Seed de datos de prueba
-// Ejecutar: node database/seed.js
-// Requiere que el schema.sql ya esté aplicado y que .env esté configurado
+// Ejecutar desde la raíz del proyecto: node database/seed.js
+// Requiere schema.sql ya aplicado y backend/.env configurado
 
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../backend/.env') });
-// pg y bcrypt residen en backend/node_modules
 const { Pool } = require(path.join(__dirname, '../backend/node_modules/pg'));
 const bcrypt  = require(path.join(__dirname, '../backend/node_modules/bcrypt'));
 
@@ -18,83 +17,97 @@ const pool = new Pool({
 
 async function seed() {
     const client = await pool.connect();
-    console.log('Conectado a PostgreSQL. Insertando datos de prueba...\n');
+    console.log('Conectado a PostgreSQL...\n');
 
     try {
         await client.query('BEGIN');
 
-        // ── Roles ──────────────────────────────────────────────────────────
-        await client.query(`
-            INSERT INTO roles (codigo, nombre) VALUES
-                ('ADMIN_GLOBAL', 'Administrador Global'),
-                ('AGENTE',       'Agente de Soporte')
-            ON CONFLICT (codigo) DO NOTHING
-        `);
-        const { rows: roles } = await client.query('SELECT id_rol, codigo FROM roles');
-        const rolId = Object.fromEntries(roles.map(r => [r.codigo, r.id_rol]));
-        console.log('✅ Roles insertados');
-
-        // ── Permisos ───────────────────────────────────────────────────────
-        const permisos = [
-            ['DASHBOARD_VER',   'Ver dashboard principal'],
-            ['CLIENTES_VER',    'Listar clientes'],
-            ['CLIENTES_CREAR',  'Registrar nuevos clientes'],
-            ['CONTRATOS_VER',   'Listar contratos'],
-            ['CONTRATOS_CREAR', 'Crear contratos'],
-            ['TICKETS_VER',     'Ver lista y detalle de tickets'],
-            ['TICKETS_CREAR',   'Crear nuevos tickets'],
+        // ── 1. MÓDULOS ──────────────────────────────────────────────────────
+        // (permisos tiene FK a modulos, por eso van primero)
+        const modulosData = [
+            ['DASHBOARD',  'Dashboard analítico',    'Visualización de KPIs y métricas de churn'],
+            ['TICKETS',    'Gestión de tickets',     'Creación y seguimiento de tickets de soporte'],
+            ['CLIENTES',   'Gestión de clientes',    'Registro y consulta de clientes'],
+            ['CONTRATOS',  'Gestión de contratos',   'Registro y consulta de contratos por cliente'],
         ];
-        for (const [codigo, descripcion] of permisos) {
+        for (const [codigo, nombre, descripcion] of modulosData) {
             await client.query(
-                `INSERT INTO permisos (codigo, descripcion) VALUES ($1, $2) ON CONFLICT (codigo) DO NOTHING`,
-                [codigo, descripcion]
-            );
-        }
-        const { rows: permRows } = await client.query('SELECT id_permiso, codigo FROM permisos');
-        const permId = Object.fromEntries(permRows.map(p => [p.codigo, p.id_permiso]));
-        console.log('✅ Permisos insertados');
-
-        // ── Roles ↔ Permisos ───────────────────────────────────────────────
-        // ADMIN_GLOBAL tiene todos los permisos
-        for (const pid of Object.values(permId)) {
-            await client.query(
-                `INSERT INTO roles_permisos (id_rol, id_permiso) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
-                [rolId['ADMIN_GLOBAL'], pid]
-            );
-        }
-        // AGENTE puede ver y crear tickets, ver clientes y dashboard
-        const permisosAgente = ['DASHBOARD_VER', 'CLIENTES_VER', 'CONTRATOS_VER', 'TICKETS_VER', 'TICKETS_CREAR'];
-        for (const codigo of permisosAgente) {
-            await client.query(
-                `INSERT INTO roles_permisos (id_rol, id_permiso) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
-                [rolId['AGENTE'], permId[codigo]]
-            );
-        }
-        console.log('✅ Roles-Permisos asignados');
-
-        // ── Módulos ────────────────────────────────────────────────────────
-        const modulos = [
-            ['DASHBOARD',  'Dashboard analítico'],
-            ['CLIENTES',   'Gestión de clientes'],
-            ['CONTRATOS',  'Gestión de contratos'],
-            ['TICKETS',    'Gestión de tickets'],
-        ];
-        for (const [codigo, nombre] of modulos) {
-            await client.query(
-                `INSERT INTO modulos (codigo, nombre) VALUES ($1, $2) ON CONFLICT (codigo) DO NOTHING`,
-                [codigo, nombre]
+                `INSERT INTO modulos (codigo, nombre, descripcion) VALUES ($1,$2,$3) ON CONFLICT (codigo) DO NOTHING`,
+                [codigo, nombre, descripcion]
             );
         }
         const { rows: modRows } = await client.query('SELECT id_modulo, codigo FROM modulos');
         const modId = Object.fromEntries(modRows.map(m => [m.codigo, m.id_modulo]));
-        console.log('✅ Módulos insertados');
+        console.log('✅ Módulos:', Object.keys(modId).join(', '));
 
-        // ── Clientes ───────────────────────────────────────────────────────
+        // ── 2. PERMISOS (cada permiso ligado a su módulo) ───────────────────
+        const permisosData = [
+            ['DASHBOARD_VER',   'Ver dashboard',          'Acceso al dashboard de métricas',           'DASHBOARD'],
+            ['TICKETS_VER',     'Ver tickets',            'Listar y consultar tickets',                 'TICKETS'],
+            ['TICKETS_CREAR',   'Crear tickets',          'Registrar nuevos tickets con análisis IA',   'TICKETS'],
+            ['CLIENTES_VER',    'Ver clientes',           'Listar y consultar clientes',                'CLIENTES'],
+            ['CLIENTES_CREAR',  'Crear clientes',         'Registrar nuevos clientes',                  'CLIENTES'],
+            ['CONTRATOS_VER',   'Ver contratos',          'Listar y consultar contratos',               'CONTRATOS'],
+            ['CONTRATOS_CREAR', 'Crear contratos',        'Registrar nuevos contratos',                 'CONTRATOS'],
+        ];
+        for (const [codigo, nombre, descripcion, modCodigo] of permisosData) {
+            await client.query(
+                `INSERT INTO permisos (codigo, nombre, descripcion, id_modulo)
+                 VALUES ($1,$2,$3,$4) ON CONFLICT (codigo) DO NOTHING`,
+                [codigo, nombre, descripcion, modId[modCodigo]]
+            );
+        }
+        const { rows: permRows } = await client.query('SELECT id_permiso, codigo FROM permisos');
+        const permId = Object.fromEntries(permRows.map(p => [p.codigo, p.id_permiso]));
+        console.log('✅ Permisos:', Object.keys(permId).join(', '));
+
+        // ── 3. ROLES ────────────────────────────────────────────────────────
+        // ADMIN_GLOBAL  → todo, sin restricción de cliente
+        // SUPERVISOR    → todos los módulos de su cliente (ver + crear)
+        // AGENTE        → solo tickets (ver + crear) y dashboard (ver)
+        // VISUALIZADOR  → solo lectura en todo (ver pero no crear)
+        const rolesData = [
+            ['ADMIN_GLOBAL',  'Administrador Global',  'Acceso total a todos los clientes y módulos'],
+            ['SUPERVISOR',    'Supervisor',             'Acceso completo dentro de su cliente asignado'],
+            ['AGENTE',        'Agente de Soporte',      'Crea y gestiona tickets de su cliente'],
+            ['VISUALIZADOR',  'Visualizador',           'Solo lectura — no puede crear ni modificar nada'],
+        ];
+        for (const [codigo, nombre, descripcion] of rolesData) {
+            await client.query(
+                `INSERT INTO roles (codigo, nombre, descripcion) VALUES ($1,$2,$3) ON CONFLICT (codigo) DO NOTHING`,
+                [codigo, nombre, descripcion]
+            );
+        }
+        const { rows: rolRows } = await client.query('SELECT id_rol, codigo FROM roles');
+        const rolId = Object.fromEntries(rolRows.map(r => [r.codigo, r.id_rol]));
+        console.log('✅ Roles:', Object.keys(rolId).join(', '));
+
+        // ── 4. ROLES ↔ PERMISOS ────────────────────────────────────────────
+        const rolPermisos = {
+            // Admin global bypassa middleware, pero le asignamos todos igual
+            'ADMIN_GLOBAL':  Object.keys(permId),
+            // Supervisor: puede todo dentro de su cliente
+            'SUPERVISOR':    Object.keys(permId),
+            // Agente: dashboard (ver) + tickets (ver + crear)
+            'AGENTE':        ['DASHBOARD_VER', 'TICKETS_VER', 'TICKETS_CREAR'],
+            // Visualizador: solo ver, nada de crear
+            'VISUALIZADOR':  ['DASHBOARD_VER', 'TICKETS_VER', 'CLIENTES_VER', 'CONTRATOS_VER'],
+        };
+        for (const [rolCodigo, perms] of Object.entries(rolPermisos)) {
+            for (const permCodigo of perms) {
+                await client.query(
+                    `INSERT INTO roles_permisos (id_rol, id_permiso) VALUES ($1,$2) ON CONFLICT DO NOTHING`,
+                    [rolId[rolCodigo], permId[permCodigo]]
+                );
+            }
+        }
+        console.log('✅ Roles-Permisos asignados');
+
+        // ── 5. CLIENTES ────────────────────────────────────────────────────
         const clientesData = [
-            ['TechCorp S.A.S',        '900111222-3', 'Tecnología',  '2021-01-15', 'ACTIVO'],
-            ['Bancol Finanzas',        '800333444-5', 'Banca',       '2020-06-01', 'ACTIVO'],
-            ['EduPlus Colombia',       '901555666-7', 'Educación',   '2022-03-20', 'ACTIVO'],
-            ['LogisTrans S.A',         '700888999-0', 'Logística',   '2019-11-10', 'ACTIVO'],
+            ['TechCorp S.A.S',     '900111222-3', 'Tecnología',  '2021-01-15', 'ACTIVO'],
+            ['Bancol Finanzas',    '800333444-5', 'Banca',       '2020-06-01', 'ACTIVO'],
+            ['EduPlus Colombia',   '901555666-7', 'Educación',   '2022-03-20', 'ACTIVO'],
         ];
         for (const [nombre, nit, sector, fecha, estado] of clientesData) {
             await client.query(
@@ -104,57 +117,62 @@ async function seed() {
             );
         }
         const { rows: cliRows } = await client.query('SELECT id_cliente, nombre FROM clientes ORDER BY id_cliente');
-        console.log('✅ Clientes insertados');
+        console.log('✅ Clientes:', cliRows.map(c => c.nombre).join(', '));
 
-        // ── Clientes ↔ Módulos (todos los módulos habilitados) ─────────────
-        for (const cli of cliRows) {
-            for (const mid of Object.values(modId)) {
+        // ── 6. CLIENTES ↔ MÓDULOS ──────────────────────────────────────────
+        // TechCorp y Bancol: todos los módulos habilitados
+        // EduPlus: solo TICKETS y DASHBOARD (sin gestión de clientes/contratos)
+        const modulosCliente = {
+            [cliRows[0].id_cliente]: ['DASHBOARD', 'TICKETS', 'CLIENTES', 'CONTRATOS'],
+            [cliRows[1].id_cliente]: ['DASHBOARD', 'TICKETS', 'CLIENTES', 'CONTRATOS'],
+            [cliRows[2].id_cliente]: ['DASHBOARD', 'TICKETS'],
+        };
+        for (const [idCli, mods] of Object.entries(modulosCliente)) {
+            for (const modCodigo of mods) {
                 await client.query(
                     `INSERT INTO clientes_modulos (id_cliente, id_modulo, habilitado)
                      VALUES ($1,$2,TRUE) ON CONFLICT DO NOTHING`,
-                    [cli.id_cliente, mid]
+                    [idCli, modId[modCodigo]]
                 );
             }
         }
         console.log('✅ Módulos asignados a clientes');
 
-        // ── Usuarios ───────────────────────────────────────────────────────
-        const hashAdmin  = await bcrypt.hash('1234', 10);
-        const hashAgente = await bcrypt.hash('1234', 10);
+        // ── 7. USUARIOS ────────────────────────────────────────────────────
+        // Escenario de prueba:
+        //   sneider@gmail.com  → ADMIN_GLOBAL  (sin cliente → acceso total)
+        //   sup1@techcorp.com  → SUPERVISOR    (TechCorp, todo habilitado)
+        //   sup2@bancol.com    → SUPERVISOR    (Bancol, todo habilitado)
+        //   agente1@techcorp.com → AGENTE      (TechCorp, solo tickets + dashboard)
+        //   agente2@techcorp.com → AGENTE      (TechCorp, solo tickets + dashboard)
+        //   viewer@eduplus.com   → VISUALIZADOR (EduPlus, solo lectura)
+        const hash = await bcrypt.hash('1234', 10);
 
-        // Admin global (id_cliente = NULL → acceso a todos)
-        await client.query(`
-            INSERT INTO usuarios (nombre, correo, password_hash, id_rol, id_cliente, rol)
-            VALUES ('Sneider Malagón', 'sneider@gmail.com', $1, $2, NULL, 'ADMIN_GLOBAL')
-            ON CONFLICT (correo) DO NOTHING
-        `, [hashAdmin, rolId['ADMIN_GLOBAL']]);
+        const usuariosData = [
+            ['Sneider Malagón',    'sneider@gmail.com',     'ADMIN_GLOBAL', null,                       'ADMIN_GLOBAL'],
+            ['Laura Torres',       'sup1@techcorp.com',     'SUPERVISOR',   cliRows[0].id_cliente,      'SUPERVISOR'],
+            ['Andrés Vargas',      'sup2@bancol.com',       'SUPERVISOR',   cliRows[1].id_cliente,      'SUPERVISOR'],
+            ['Camila Ruiz',        'agente1@techcorp.com',  'AGENTE',       cliRows[0].id_cliente,      'AGENTE'],
+            ['David Morales',      'agente2@techcorp.com',  'AGENTE',       cliRows[0].id_cliente,      'AGENTE'],
+            ['Sofía Herrera',      'viewer@eduplus.com',    'VISUALIZADOR', cliRows[2].id_cliente,      'VISUALIZADOR'],
+        ];
+        for (const [nombre, correo, rolCodigo, idCliente, rolText] of usuariosData) {
+            await client.query(
+                `INSERT INTO usuarios (nombre, correo, password_hash, id_rol, id_cliente, rol, activo)
+                 VALUES ($1,$2,$3,$4,$5,$6,TRUE) ON CONFLICT (correo) DO NOTHING`,
+                [nombre, correo, hash, rolId[rolCodigo], idCliente, rolText]
+            );
+        }
+        console.log('✅ Usuarios creados');
 
-        // Agente de TechCorp
-        await client.query(`
-            INSERT INTO usuarios (nombre, correo, password_hash, id_rol, id_cliente, rol)
-            VALUES ('Ana Rodríguez', 'ana@techcorp.com', $1, $2, $3, 'AGENTE')
-            ON CONFLICT (correo) DO NOTHING
-        `, [hashAgente, rolId['AGENTE'], cliRows[0].id_cliente]);
-
-        // Agente de Bancol
-        await client.query(`
-            INSERT INTO usuarios (nombre, correo, password_hash, id_rol, id_cliente, rol)
-            VALUES ('Carlos Mejía', 'carlos@bancol.com', $1, $2, $3, 'AGENTE')
-            ON CONFLICT (correo) DO NOTHING
-        `, [hashAgente, rolId['AGENTE'], cliRows[1].id_cliente]);
-
-        console.log('✅ Usuarios insertados');
-
-        // ── Contratos ──────────────────────────────────────────────────────
+        // ── 8. CONTRATOS ───────────────────────────────────────────────────
         const contratosData = [
-            [cliRows[0].id_cliente, 'Sistema de Gestión ERP', '2021-02-01', '2025-12-31', 8500000, 'VIGENTE', 'GOLD'],
-            [cliRows[0].id_cliente, 'Soporte Infraestructura Cloud', '2022-01-01', null, 3200000, 'VIGENTE', 'SILVER'],
-            [cliRows[1].id_cliente, 'Plataforma Core Bancario', '2020-07-01', '2025-06-30', 25000000, 'VIGENTE', 'DIAMOND'],
-            [cliRows[1].id_cliente, 'Módulo de Reportes BI', '2023-01-15', null, 5000000, 'VIGENTE', 'GOLD'],
-            [cliRows[2].id_cliente, 'LMS Campus Virtual', '2022-04-01', '2024-12-31', 4200000, 'INACTIVO', 'BRONZE'],
-            [cliRows[2].id_cliente, 'Portal Estudiantil v2', '2024-01-01', null, 6800000, 'VIGENTE', 'SILVER'],
-            [cliRows[3].id_cliente, 'Sistema de Rastreo GPS', '2019-12-01', '2024-11-30', 12000000, 'VENCIDO', 'GOLD'],
-            [cliRows[3].id_cliente, 'App Móvil Entregas', '2023-06-01', null, 9500000, 'VIGENTE', 'SILVER'],
+            [cliRows[0].id_cliente, 'Sistema ERP',            '2021-02-01', '2025-12-31', 8500000,  'VIGENTE',  'GOLD'],
+            [cliRows[0].id_cliente, 'Soporte Cloud',          '2022-01-01', null,         3200000,  'VIGENTE',  'SILVER'],
+            [cliRows[1].id_cliente, 'Core Bancario',          '2020-07-01', '2025-06-30', 25000000, 'VIGENTE',  'DIAMOND'],
+            [cliRows[1].id_cliente, 'Módulo BI',              '2023-01-15', null,         5000000,  'VIGENTE',  'GOLD'],
+            [cliRows[2].id_cliente, 'LMS Campus Virtual',     '2022-04-01', '2024-12-31', 4200000,  'INACTIVO', 'BRONZE'],
+            [cliRows[2].id_cliente, 'Portal Estudiantil v2',  '2024-01-01', null,         6800000,  'VIGENTE',  'SILVER'],
         ];
         for (const [id_cli, nombre, f_ini, f_fin, valor, estado, nivel] of contratosData) {
             await client.query(
@@ -164,80 +182,49 @@ async function seed() {
             );
         }
         const { rows: ctRows } = await client.query('SELECT id_contrato FROM contratos ORDER BY id_contrato');
-        console.log('✅ Contratos insertados');
+        console.log('✅ Contratos:', ctRows.length);
 
-        // ── Tickets con análisis ───────────────────────────────────────────
+        // ── 9. TICKETS + ANÁLISIS ──────────────────────────────────────────
         const ticketsData = [
-            // [id_contrato, titulo, descripcion, tipo, prioridad, estado, sentimiento, frustracion, score, riesgo, phishing, sensible, recomendaciones]
-            [ctRows[0].id_contrato,
-             'Error crítico en módulo de nómina',
-             'El sistema ERP cayó durante el proceso de liquidación de nómina del mes. Llevamos 3 horas sin poder acceder y estamos perdiendo dinero. Esto es inaceptable, ya es la tercera vez que ocurre.',
-             'CORRECTIVO', 'CRITICA', 'EN_PROCESO',
-             'NEGATIVO', 'ALTA', 85, 'ALTO', false, false,
-             'Escalar inmediatamente al equipo de infraestructura. Contactar al cliente en menos de 1 hora. Riesgo de pérdida de contrato ALTO.'],
+            [ctRows[0].id_contrato, 'Error crítico en módulo de nómina',
+             'El sistema ERP cayó durante la liquidación de nómina. Llevamos 3 horas sin acceso y estamos perdiendo dinero. Esto es inaceptable.',
+             'CORRECTIVO','CRITICA','EN_PROCESO','NEGATIVO','ALTA',85,'ALTO',false,false,
+             'Escalar inmediatamente al equipo de infraestructura. Contactar al cliente en menos de 1 hora.'],
 
-            [ctRows[0].id_contrato,
-             'Solicitud de nueva funcionalidad en reportes',
-             'Necesitamos agregar un filtro por centro de costo en el módulo de reportes financieros. No es urgente pero lo necesitamos para el próximo trimestre.',
-             'EVOLUTIVO', 'MEDIA', 'ENTREGADO',
-             'NEUTRO', 'BAJA', 25, 'BAJO', false, false,
-             'Crear ticket en el backlog del equipo de desarrollo. Programar para el siguiente sprint.'],
+            [ctRows[0].id_contrato, 'Solicitud filtro en reportes',
+             'Necesitamos un filtro por centro de costo en el módulo de reportes. No es urgente pero lo requerimos para el próximo trimestre.',
+             'EVOLUTIVO','MEDIA','ENTREGADO','NEUTRO','BAJA',22,'BAJO',false,false,
+             'Agregar al backlog del equipo de desarrollo para el siguiente sprint.'],
 
-            [ctRows[1].id_contrato,
-             'Latencia alta en servidores de producción',
-             'Desde ayer los tiempos de respuesta de la API aumentaron de 200ms a más de 3 segundos. Los usuarios están reportando timeouts. Urgente revisión.',
-             'CORRECTIVO', 'ALTA', 'EN_PROCESO',
-             'NEGATIVO', 'MEDIA', 62, 'MEDIO', false, false,
-             'Revisar métricas de CPU y memoria en los últimos 24 horas. Verificar si hay jobs programados consumiendo recursos.'],
+            [ctRows[1].id_contrato, 'Latencia alta en servidores',
+             'Desde ayer los tiempos de respuesta aumentaron de 200ms a 3 segundos. Los usuarios reportan timeouts frecuentes.',
+             'CORRECTIVO','ALTA','EN_PROCESO','NEGATIVO','MEDIA',60,'MEDIO',false,false,
+             'Revisar métricas de CPU y memoria en las últimas 24 horas.'],
 
-            [ctRows[2].id_contrato,
-             'Falla en integración con sistema de pagos PSE',
-             'Las transacciones PSE están fallando desde las 8am. El sistema de core bancario no está comunicando correctamente con el gateway. Esto es crítico para el banco.',
-             'CORRECTIVO', 'CRITICA', 'ENTREGADO',
-             'NEGATIVO', 'ALTA', 92, 'ALTO', false, false,
-             'Contactar al cliente en los próximos 15 minutos. Activar protocolo de incidente crítico. Coordinar con equipo de integraciones PSE.'],
+            [ctRows[2].id_contrato, 'Falla integración PSE',
+             'Las transacciones PSE están fallando desde las 8am. El core bancario no comunica con el gateway de pagos.',
+             'CORRECTIVO','CRITICA','ENTREGADO','NEGATIVO','ALTA',92,'ALTO',false,false,
+             'Activar protocolo de incidente crítico. Contactar al cliente en 15 minutos.'],
 
-            [ctRows[2].id_contrato,
-             'Actualización de certificados SSL',
-             'Los certificados SSL del servidor de producción vencen el próximo mes. Necesitamos programar la renovación sin afectar la disponibilidad del servicio.',
-             'OTRO', 'MEDIA', 'CERRADO',
-             'NEUTRO', 'BAJA', 10, 'BAJO', false, false,
-             'Programar ventana de mantenimiento en horario de bajo tráfico. Notificar al cliente con 72 horas de anticipación.'],
+            [ctRows[2].id_contrato, 'Renovación certificados SSL',
+             'Los certificados SSL del servidor de producción vencen el próximo mes. Necesitamos programar la renovación.',
+             'OTRO','MEDIA','CERRADO','NEUTRO','BAJA',10,'BAJO',false,false,
+             'Programar ventana de mantenimiento y notificar al cliente con 72 horas de anticipación.'],
 
-            [ctRows[3].id_contrato,
-             'Inconsistencias en reportes de riesgo crediticio',
-             'Los reportes de análisis de riesgo muestran cifras distintas al sistema legado. Necesitamos una revisión urgente ya que hay una auditoría mañana.',
-             'CORRECTIVO', 'ALTA', 'EN_PROCESO',
-             'NEGATIVO', 'ALTA', 75, 'ALTO', false, false,
-             'Comparar queries del sistema nuevo vs legado. Identificar discrepancias en la lógica de cálculo. Prioridad máxima por auditoría.'],
+            [ctRows[3].id_contrato, 'Inconsistencias en reportes de riesgo',
+             'Los reportes muestran cifras distintas al sistema legado. Hay una auditoría mañana, necesitamos revisión urgente.',
+             'CORRECTIVO','ALTA','EN_PROCESO','NEGATIVO','ALTA',75,'ALTO',false,false,
+             'Comparar queries del nuevo sistema vs el legado. Prioridad máxima por auditoría.'],
 
-            [ctRows[5].id_contrato,
-             'Estudiantes no pueden acceder al portal',
-             'Múltiples estudiantes reportan que no pueden iniciar sesión en el portal. El error dice credenciales incorrectas pero las contraseñas son correctas.',
-             'CORRECTIVO', 'ALTA', 'ENTREGADO',
-             'NEGATIVO', 'MEDIA', 55, 'MEDIO', false, false,
-             'Verificar el servicio de autenticación. Posible caída del LDAP o directorio activo. Revisar logs de auth desde las últimas 2 horas.'],
+            [ctRows[5].id_contrato, 'Estudiantes no pueden acceder al portal',
+             'Múltiples estudiantes no pueden iniciar sesión. El error dice credenciales incorrectas pero son correctas.',
+             'CORRECTIVO','ALTA','ENTREGADO','NEGATIVO','MEDIA',55,'MEDIO',false,false,
+             'Verificar el servicio de autenticación y revisar logs de auth de las últimas 2 horas.'],
 
-            [ctRows[7].id_contrato,
-             'La app móvil muestra ubicaciones desactualizadas',
-             'Los repartidores dicen que la app de entregas les muestra ubicaciones de hace 10 minutos. El sistema de rastreo en tiempo real no está funcionando bien.',
-             'CORRECTIVO', 'MEDIA', 'ENTREGADO',
-             'NEUTRO', 'MEDIA', 40, 'MEDIO', false, false,
-             'Revisar la conexión con el broker de mensajería. Verificar frecuencia de actualización de coordenadas GPS en los dispositivos.'],
-
-            [ctRows[0].id_contrato,
-             'Excelente soporte recibido esta semana',
-             'Quería agradecer al equipo por la rápida respuesta al incidente de la semana pasada. La solución fue implementada en tiempo récord y el equipo estuvo muy atento. Muy satisfechos con el servicio.',
-             'OTRO', 'BAJA', 'CERRADO',
-             'POSITIVO', 'BAJA', 5, 'BAJO', false, false,
-             'Mantener el nivel de atención actual. Compartir el feedback positivo con el equipo de soporte.'],
-
-            [ctRows[2].id_contrato,
-             'Necesitamos más usuarios licenciados',
-             'El banco ha contratado 50 nuevos analistas y necesitamos ampliar las licencias del sistema. Por favor gestionar lo antes posible.',
-             'EVOLUTIVO', 'BAJA', 'ENTREGADO',
-             'NEUTRO', 'BAJA', 15, 'BAJO', false, false,
-             'Coordinar con el área comercial para gestionar la ampliación de licencias. Tiempo estimado: 3-5 días hábiles.'],
+            [ctRows[0].id_contrato, 'Agradecimiento por soporte',
+             'Quería agradecer al equipo por la rápida respuesta al incidente de la semana pasada. Muy satisfechos.',
+             'OTRO','BAJA','CERRADO','POSITIVO','BAJA',5,'BAJO',false,false,
+             'Mantener el nivel de atención actual y compartir el feedback con el equipo.'],
         ];
 
         for (const [id_cont, titulo, desc, tipo, prioridad, estadoT, sent, frust, score, riesgo, phishing, sensible, recom] of ticketsData) {
@@ -246,34 +233,37 @@ async function seed() {
                  VALUES ($1,$2,$3,$4,$5,$6) RETURNING id_ticket`,
                 [id_cont, titulo, desc, tipo, prioridad, estadoT]
             );
-            const id_ticket = tr.rows[0].id_ticket;
             await client.query(
                 `INSERT INTO analisis_ticket
                  (id_ticket, sentimiento, frustracion, score_churn, riesgo_churn,
                   es_potencial_phishing, tiene_datos_sensibles, recomendaciones)
                  VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-                [id_ticket, sent, frust, score, riesgo, phishing, sensible, recom]
+                [tr.rows[0].id_ticket, sent, frust, score, riesgo, phishing, sensible, recom]
             );
         }
-        console.log('✅ Tickets y análisis insertados');
+        console.log('✅ Tickets + análisis:', ticketsData.length);
 
         await client.query('COMMIT');
 
-        console.log('\n──────────────────────────────────────────');
-        console.log('  Seed completado exitosamente');
-        console.log('──────────────────────────────────────────');
-        console.log('\nCredenciales de prueba:');
-        console.log('  Admin global  → sneider@gmail.com  / 1234');
-        console.log('  Agente (TechCorp) → ana@techcorp.com   / 1234');
-        console.log('  Agente (Bancol)   → carlos@bancol.com  / 1234');
-        console.log('\nBase de datos: vortex');
-        console.log('Clientes:', cliRows.map(c => c.nombre).join(', '));
-        console.log('Contratos:', ctRows.length);
-        console.log('Tickets:  ', ticketsData.length, '(con análisis IA simulado)');
+        console.log(`
+──────────────────────────────────────────────────────
+  Seed completado — Usuarios de prueba (contraseña: 1234)
+──────────────────────────────────────────────────────
+  ADMIN_GLOBAL  sneider@gmail.com      → acceso total (todos los clientes)
+  SUPERVISOR    sup1@techcorp.com      → TechCorp  (todos los módulos)
+  SUPERVISOR    sup2@bancol.com        → Bancol    (todos los módulos)
+  AGENTE        agente1@techcorp.com   → TechCorp  (dashboard + tickets)
+  AGENTE        agente2@techcorp.com   → TechCorp  (dashboard + tickets)
+  VISUALIZADOR  viewer@eduplus.com     → EduPlus   (solo lectura, sin crear)
+──────────────────────────────────────────────────────
+  EduPlus solo tiene módulos DASHBOARD y TICKETS habilitados.
+──────────────────────────────────────────────────────
+`);
 
     } catch (err) {
         await client.query('ROLLBACK');
         console.error('\n❌ Error durante el seed:', err.message);
+        console.error(err);
         process.exit(1);
     } finally {
         client.release();
