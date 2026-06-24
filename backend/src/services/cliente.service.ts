@@ -79,7 +79,6 @@ export async function crearContrato(data: ContratoInput): Promise<Contrato> {
         fecha_inicio,
         fecha_fin ?? null,
         valor_mensual,
-        estado,
         nivel_servicio ?? null
     ];
 

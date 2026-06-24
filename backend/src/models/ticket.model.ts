@@ -42,3 +42,22 @@ export interface PreprocesamientoTextoResult {
     tieneDatosSensibles: boolean;
     esPhishingSospechoso: boolean;
 }
+
+export interface TicketContextoCreacion {
+    cliente: {
+        id_cliente: number;
+        nombre: string;
+        nit: string | null;
+        sector: string | null;
+        fecha_inicio_relacion: string | null;
+        estado: string;
+    };
+    contratos_activos: {
+        id_contrato: number;
+        nombre_proyecto: string;
+        fecha_inicio: string | null;
+        fecha_fin: string | null;
+        estado: string;
+        nivel_servicio: string | null;
+    }[];
+}

@@ -2,9 +2,154 @@
 //cSpell:disable
 import { pool } from '../db/pool';
 import { AnalisisIAResult } from '../models/ia.models';
-import { AnalisisRow, CreateTicketDTO, TicketRow, TicketWithAnalysis } from '../models/ticket.model';
+import { AnalisisRow, CreateTicketDTO, TicketRow, TicketWithAnalysis, TicketContextoCreacion } from '../models/ticket.model';
 import { analizarTextoTicketConIA } from './ia.service';
 import { preprocesarTextoTicket } from '../utils/text-security.util';
+
+export async function obtenerContextoCreacionTicketPorCliente(
+    idCliente: number
+): Promise<TicketContextoCreacion | null> {
+    const clienteQuery = `
+        SELECT
+            id_cliente,
+            nombre,
+            nit,
+            sector,
+            fecha_inicio_relacion,
+            estado
+        FROM clientes
+        WHERE id_cliente = $1
+        LIMIT 1
+    `;
+
+    const clienteResult = await pool.query(clienteQuery, [idCliente]);
+
+    if (clienteResult.rowCount === 0) {
+        return null;
+    }
+
+    const c = clienteResult.rows[0];
+
+    const cliente = {
+        id_cliente: c.id_cliente,
+        nombre: c.nombre,
+        nit: c.nit,
+        sector: c.sector,
+        fecha_inicio_relacion: c.fecha_inicio_relacion,
+        estado: c.estado
+    };
+
+    const contratosQuery = `
+        SELECT
+            id_contrato,
+            nombre_proyecto,
+            fecha_inicio,
+            fecha_fin,
+            estado,
+            nivel_servicio
+        FROM contratos
+        WHERE id_cliente = $1
+          AND estado = 'VIGENTE'
+        ORDER BY fecha_inicio DESC
+    `;
+
+    const contratosResult = await pool.query(contratosQuery, [idCliente]);
+
+    const contratos_activos = contratosResult.rows.map((row: any) => ({
+        id_contrato: row.id_contrato,
+        nombre_proyecto: row.nombre_proyecto,
+        fecha_inicio: row.fecha_inicio,
+        fecha_fin: row.fecha_fin,
+        estado: row.estado,
+        nivel_servicio: row.nivel_servicio
+    }));
+
+    return {
+        cliente,
+        contratos_activos
+    };
+}
+
+export async function obtenerContextoCreacionTicketPorNit(
+    nit: string
+): Promise<TicketContextoCreacion | null> {
+    const clienteQuery = `
+        SELECT
+            id_cliente,
+            nombre,
+            nit,
+            sector,
+            fecha_inicio_relacion,
+            estado
+        FROM clientes
+        WHERE nit = $1
+        LIMIT 1
+    `;
+
+    const clienteResult = await pool.query(clienteQuery, [nit]);
+
+    if (clienteResult.rowCount === 0) {
+        return null;
+    }
+
+    const c = clienteResult.rows[0];
+
+    const cliente = {
+        id_cliente: c.id_cliente,
+        nombre: c.nombre,
+        nit: c.nit,
+        sector: c.sector,
+        fecha_inicio_relacion: c.fecha_inicio_relacion,
+        estado: c.estado
+    };
+
+    const contratosQuery = `
+        SELECT
+            id_contrato,
+            nombre_proyecto,
+            fecha_inicio,
+            fecha_fin,
+            estado,
+            nivel_servicio
+        FROM contratos
+        WHERE id_cliente = $1
+          AND estado = 'VIGENTE'
+        ORDER BY fecha_inicio DESC
+    `;
+
+    const contratosResult = await pool.query(contratosQuery, [cliente.id_cliente]);
+
+    const contratos_activos = contratosResult.rows.map((row: any) => ({
+        id_contrato: row.id_contrato,
+        nombre_proyecto: row.nombre_proyecto,
+        fecha_inicio: row.fecha_inicio,
+        fecha_fin: row.fecha_fin,
+        estado: row.estado,
+        nivel_servicio: row.nivel_servicio
+    }));
+
+    return {
+        cliente,
+        contratos_activos
+    };
+}
+
+export async function validarContratoPerteneceACliente(
+    idContrato: number,
+    idCliente: number
+): Promise<boolean> {
+    const query = `
+        SELECT 1
+        FROM contratos
+        WHERE id_contrato = $1
+          AND id_cliente = $2
+        LIMIT 1
+    `;
+
+    const result = await pool.query(query, [idContrato, idCliente]);
+    return result.rowCount > 0;
+}
+
 
 export async function obtenerDetalleTicket(idTicket: number): Promise<any | null> {
     const query = `

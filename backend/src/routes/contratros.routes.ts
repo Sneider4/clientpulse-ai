@@ -9,7 +9,7 @@ const router = Router();
 router.use(authJwt);
 router.use(requireModule('CONTRATOS'));
 
-router.get('/consultar-contratos', requirePermission('CONTRATO_VER'), getContratosHandler);
-router.post('/insertar-contrato', requirePermission('CONTRATO_CREAR'), crearContratoHandler);
+router.get('/consultar-contratos', requirePermission('CONTRATOS_VER'), getContratosHandler);
+router.post('/insertar-contrato', requirePermission('CONTRATOS_CREAR'), crearContratoHandler);
 
 export default router;

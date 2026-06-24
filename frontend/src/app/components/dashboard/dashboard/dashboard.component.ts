@@ -78,6 +78,7 @@ export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
                 tap((data) => {
                     this.loading = false;
                     this.data = data;
+                    console.log("🚀 ~ DashboardComponent ~ cargarResumen ~ data:", data)
 
                     // IMPORTANTE:
                     // Esperamos al siguiente "tick" para que Angular pinte los canvas

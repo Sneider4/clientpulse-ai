@@ -7,21 +7,23 @@ export async function getDashboardResumen(): Promise<DashboardResumen> {
     // Top clientes por score promedio de churn (últimos 30 días)
     const topClientesQuery = `
     SELECT
-      c.id_cliente,
-      c.nombre AS nombre_cliente,
-      COUNT(t.id_ticket) AS total_tickets,
-      AVG(a.score_churn) AS promedio_score_churn,
-      MODE() WITHIN GROUP (ORDER BY a.riesgo_churn) AS riesgo_predominante
+        c.id_cliente,
+        c.nombre AS nombre_cliente,
+        COUNT(t.id_ticket) AS total_tickets,
+        AVG(a.score_churn) AS promedio_score_churn,
+        MODE() WITHIN GROUP (ORDER BY a.riesgo_churn) AS riesgo_predominante
     FROM clientes c
-    JOIN contratos ct ON ct.id_cliente = c.id_cliente
-    JOIN tickets t ON t.id_contrato = ct.id_contrato
-    JOIN analisis_ticket a ON a.id_ticket = t.id_ticket
-    WHERE t.fecha_creacion >= NOW() - INTERVAL '30 days'
+      JOIN contratos ct ON ct.id_cliente = c.id_cliente
+      JOIN tickets t ON t.id_contrato = ct.id_contrato
+      JOIN analisis_ticket a ON a.id_ticket = t.id_ticket
     GROUP BY c.id_cliente, c.nombre
     HAVING COUNT(t.id_ticket) > 0
     ORDER BY promedio_score_churn DESC
     LIMIT 5;
   `;
+  
+  // tener en cuenta esta linea del where a que solo se coloca cuando este en funcionamiento, solo coge los de los ultimos 30 dias
+  // WHERE t.fecha_creacion >= NOW() - INTERVAL '30 days'
 
     const topClientesResult = await pool.query(topClientesQuery);
 
