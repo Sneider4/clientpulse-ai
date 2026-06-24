@@ -87,9 +87,9 @@ Plataforma SaaS de análisis de soporte al cliente con inteligencia artificial. 
                                                       └──────────────────────────┘
 ```
 
-### Valores permitidos
+### Valores convencionales (manejados por la aplicación)
 
-| Campo | Opciones |
+| Campo | Valores |
 |-------|---------|
 | `clientes.estado` | `ACTIVO`, `INACTIVO` |
 | `contratos.estado` | `VIGENTE`, `INACTIVO`, `VENCIDO`, `CANCELADO` |
@@ -160,11 +160,20 @@ git clone https://github.com/Sneider4/clientpulse-ai.git
 cd clientpulse-ai
 ```
 
-### 2. Crear la base de datos
+### 2. Restaurar la base de datos
 
+**Opción A — desde el backup completo (recomendado, incluye datos reales):**
+```bash
+psql -U postgres -c "CREATE DATABASE vortex;"
+pg_restore -U postgres -d vortex database/clientpulseai.sql
+```
+
+**Opción B — solo el esquema vacío (para empezar desde cero):**
 ```bash
 psql -U postgres -c "CREATE DATABASE vortex;"
 psql -U postgres -d vortex -f database/schema.sql
+# Luego cargar datos de prueba:
+node database/seed.js
 ```
 
 ### 3. Configurar el backend
