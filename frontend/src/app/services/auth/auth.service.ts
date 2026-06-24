@@ -21,6 +21,7 @@ export class AuthService {
     private _permissions = signal<string[]>(this.readJson('permissions') ?? []);
 
     isLoggedIn = computed(() => !!this._token());
+    isAdmin    = computed(() => !!this._user() && this._user().id_cliente === null);
 
     constructor(private http: HttpClient) { }
 

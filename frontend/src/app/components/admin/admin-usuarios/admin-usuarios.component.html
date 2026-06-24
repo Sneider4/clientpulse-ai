@@ -1,0 +1,100 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="fw-bold mb-0">Usuarios del sistema</h5>
+    @if (!showForm) {
+        <button class="btn btn-primary btn-sm" (click)="abrirCrear()">
+            <i class="bi bi-plus-circle me-1"></i>Nuevo usuario
+        </button>
+    }
+</div>
+
+@if (showForm) {
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h6 class="fw-bold mb-3">{{ editId ? 'Editar usuario' : 'Crear usuario' }}</h6>
+            <form [formGroup]="form" (ngSubmit)="guardar()" class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Nombre</label>
+                    <input class="form-control" formControlName="nombre" />
+                    @if (hasError('nombre','required')) { <div class="text-danger small">Obligatorio</div> }
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Correo</label>
+                    <input class="form-control" type="email" formControlName="correo" />
+                    @if (hasError('correo','required')) { <div class="text-danger small">Obligatorio</div> }
+                    @if (hasError('correo','email'))    { <div class="text-danger small">Correo inválido</div> }
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Contraseña {{ editId ? '(dejar vacío para no cambiar)' : '' }}</label>
+                    <input class="form-control" type="password" formControlName="password" autocomplete="new-password" />
+                    @if (hasError('password','required')) { <div class="text-danger small">Obligatorio</div> }
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Rol</label>
+                    <select class="form-select" formControlName="id_rol">
+                        <option [ngValue]="null">Seleccionar rol...</option>
+                        @for (r of roles; track r.id_rol) {
+                            <option [value]="r.id_rol">{{ r.nombre }}</option>
+                        }
+                    </select>
+                    @if (hasError('id_rol','required')) { <div class="text-danger small">Obligatorio</div> }
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Cliente <small class="text-muted">(vacío = Admin global)</small></label>
+                    <select class="form-select" formControlName="id_cliente">
+                        <option [ngValue]="null">— Sin cliente (Admin) —</option>
+                        @for (c of clientes; track c.id_cliente) {
+                            <option [value]="c.id_cliente">{{ c.nombre }} ({{ c.nit }})</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-12 d-flex gap-2 justify-content-end">
+                    <button type="button" class="btn btn-outline-secondary" (click)="cancelar()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">{{ editId ? 'Guardar cambios' : 'Crear usuario' }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+@if (loading) { <div class="alert alert-info">Cargando usuarios...</div> }
+
+@if (!loading) {
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Nombre</th>
+                    <th>Correo</th>
+                    <th>Rol</th>
+                    <th>Cliente</th>
+                    <th class="text-center">Estado</th>
+                    <th class="text-center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (u of usuarios; track u.id_usuario) {
+                    <tr [class.table-secondary]="!u.activo">
+                        <td class="fw-semibold">{{ u.nombre }}</td>
+                        <td>{{ u.correo }}</td>
+                        <td><span class="badge text-bg-secondary">{{ u.rol }}</span></td>
+                        <td>{{ u.nombre_cliente ?? '— Admin global —' }}</td>
+                        <td class="text-center">
+                            <span class="badge" [class.text-bg-success]="u.activo" [class.text-bg-danger]="!u.activo">
+                                {{ u.activo ? 'Activo' : 'Inactivo' }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-outline-primary me-1" (click)="abrirEditar(u)" title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm" [class.btn-outline-danger]="u.activo" [class.btn-outline-success]="!u.activo"
+                                    (click)="toggle(u)" [title]="u.activo ? 'Desactivar' : 'Activar'">
+                                <i class="bi" [class.bi-person-x]="u.activo" [class.bi-person-check]="!u.activo"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

@@ -1,0 +1,134 @@
+<!-- Vista de permisos del rol -->
+@if (rolSeleccionado) {
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold mb-0">
+                    Permisos del rol: <span class="text-primary">{{ rolSeleccionado.nombre }}</span>
+                </h6>
+                <button class="btn btn-sm btn-outline-secondary" (click)="rolSeleccionado = null">
+                    <i class="bi bi-arrow-left me-1"></i>Volver
+                </button>
+            </div>
+
+            @for (grupo of modulosGrupo; track grupo.codigo) {
+                <div class="mb-3 border rounded p-3">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <h6 class="mb-0 fw-semibold text-uppercase text-muted" style="font-size:.75rem; letter-spacing:.08em">
+                            <i class="bi bi-grid me-1"></i>{{ grupo.nombre }}
+                        </h6>
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" [id]="'mod-' + grupo.codigo"
+                                   [checked]="todosDelModulo(grupo.permisos)"
+                                   (change)="toggleModulo(grupo.permisos, !todosDelModulo(grupo.permisos))">
+                            <label class="form-check-label small text-muted" [for]="'mod-' + grupo.codigo">Todo el módulo</label>
+                        </div>
+                    </div>
+                    <div class="row g-2">
+                        @for (p of grupo.permisos; track p.id_permiso) {
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" [id]="'p-' + p.id_permiso"
+                                           [checked]="tienePermiso(p.id_permiso)"
+                                           (change)="togglePermiso(p.id_permiso)">
+                                    <label class="form-check-label" [for]="'p-' + p.id_permiso">
+                                        <span class="fw-semibold">{{ p.nombre }}</span>
+                                        <small class="d-block text-muted">{{ p.codigo }}</small>
+                                    </label>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <div class="d-flex justify-content-end gap-2 mt-3">
+                <button class="btn btn-outline-secondary" (click)="rolSeleccionado = null">Cancelar</button>
+                <button class="btn btn-success" (click)="guardarPermisos()">
+                    <i class="bi bi-check-lg me-1"></i>Guardar permisos
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Lista de roles -->
+@if (!rolSeleccionado) {
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0">Roles del sistema</h5>
+        @if (!showForm) {
+            <button class="btn btn-primary btn-sm" (click)="abrirCrear()">
+                <i class="bi bi-plus-circle me-1"></i>Nuevo rol
+            </button>
+        }
+    </div>
+
+    @if (showForm) {
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h6 class="fw-bold mb-3">{{ editId ? 'Editar rol' : 'Crear rol' }}</h6>
+                <form [formGroup]="form" (ngSubmit)="guardar()" class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Código <small class="text-muted">(único, en mayúsculas)</small></label>
+                        <input class="form-control text-uppercase" formControlName="codigo" placeholder="Ej: SUPERVISOR" />
+                        @if (hasError('codigo','required')) { <div class="text-danger small">Obligatorio</div> }
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Nombre</label>
+                        <input class="form-control" formControlName="nombre" placeholder="Ej: Supervisor de soporte" />
+                        @if (hasError('nombre','required')) { <div class="text-danger small">Obligatorio</div> }
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">Descripción <small class="text-muted">(opcional)</small></label>
+                        <input class="form-control" formControlName="descripcion" />
+                    </div>
+                    <div class="col-12 d-flex gap-2 justify-content-end">
+                        <button type="button" class="btn btn-outline-secondary" (click)="cancelar()">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">{{ editId ? 'Guardar' : 'Crear rol' }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    }
+
+    @if (loading) { <div class="alert alert-info">Cargando roles...</div> }
+
+    @if (!loading) {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Código</th>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th class="text-center">Permisos</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (r of roles; track r.id_rol) {
+                        <tr>
+                            <td><code>{{ r.codigo }}</code></td>
+                            <td class="fw-semibold">{{ r.nombre }}</td>
+                            <td class="text-muted small">{{ r.descripcion ?? '—' }}</td>
+                            <td class="text-center">
+                                <span class="badge text-bg-primary">{{ r.permisos.length }}</span>
+                            </td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-outline-secondary me-1" (click)="abrirEditar(r)" title="Editar nombre">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary me-1" (click)="abrirPermisos(r)" title="Gestionar permisos">
+                                    <i class="bi bi-key"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" (click)="eliminar(r)" title="Eliminar">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}

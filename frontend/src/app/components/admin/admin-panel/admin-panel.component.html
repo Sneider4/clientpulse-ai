@@ -1,0 +1,28 @@
+<div class="container my-4">
+    <div class="mb-4">
+        <h1 class="fw-bold mb-1"><i class="bi bi-shield-lock me-2"></i>Administración</h1>
+        <p class="text-muted mb-0">Gestión de usuarios, roles, permisos y módulos por cliente.</p>
+    </div>
+
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <button class="nav-link" [class.active]="tab() === 'usuarios'" (click)="setTab('usuarios')">
+                <i class="bi bi-people me-1"></i>Usuarios
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" [class.active]="tab() === 'roles'" (click)="setTab('roles')">
+                <i class="bi bi-person-badge me-1"></i>Roles y Permisos
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" [class.active]="tab() === 'modulos'" (click)="setTab('modulos')">
+                <i class="bi bi-toggles me-1"></i>Módulos por Cliente
+            </button>
+        </li>
+    </ul>
+
+    @if (tab() === 'usuarios')  { <app-admin-usuarios /> }
+    @if (tab() === 'roles')     { <app-admin-roles /> }
+    @if (tab() === 'modulos')   { <app-admin-modulos /> }
+</div>

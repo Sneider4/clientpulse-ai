@@ -1,4 +1,6 @@
 import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { NuevoTicketComponent } from './components/tickets/nuevo-ticket/nuevo-ticket.component';
 import { ListaTicketsComponent } from './components/tickets/lista-tickets/lista-tickets.component';
 import { DashboardComponent } from './components/dashboard/dashboard/dashboard.component';
@@ -7,10 +9,20 @@ import { CrearClienteComponent } from './components/clientes/crear-cliente/crear
 import { CrearContratoComponent } from './components/clientes/crear-contrato/crear-contrato.component';
 import { authGuard } from './services/auth/auth.guard';
 import { moduleGuard } from './services/auth/module.guard';
+import { AuthService } from './services/auth/auth.service';
 import { LoginComponent } from './components/login/login/login.component';
 import { DetalleTicketComponent } from './components/tickets/detalle-ticket/detalle-ticket.component';
 import { PerdidoComponent } from './components/error/perdido/perdido.component';
 import { SinAccesoComponent } from './components/error/sin-acceso/sin-acceso.component';
+import { AdminPanelComponent } from './components/admin/admin-panel/admin-panel.component';
+
+const adminGuard = () => {
+    const auth   = inject(AuthService);
+    const router = inject(Router);
+    if (!auth.isLoggedIn()) { router.navigate(['/login']); return false; }
+    if (!auth.isAdmin())    { router.navigate(['/sin-acceso']); return false; }
+    return true;
+};
 
 export const routes: Routes = [
     {
@@ -51,6 +63,11 @@ export const routes: Routes = [
         path: 'contratos/nuevo',
         component: CrearContratoComponent,
         canMatch: [moduleGuard('CONTRATOS', 'CONTRATOS_VER')],
+    },
+    {
+        path: 'admin',
+        component: AdminPanelComponent,
+        canMatch: [adminGuard],
     },
     {
         path: 'sin-acceso',

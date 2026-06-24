@@ -9,8 +9,9 @@ type MenuItem = {
     label: string;
     icon?: string;
     route: string;
-    module: string;
-    permission?: string; // opcional
+    module?: string;
+    permission?: string;
+    adminOnly?: boolean;
 };
 
 @Component({
@@ -26,11 +27,12 @@ export class AppComponent {
     currentYear = new Date().getFullYear();
 
     items: MenuItem[] = [
-        { label: 'Dashboard', icon: 'bi bi-speedometer2', route: '/dashboard', module: 'DASHBOARD', permission: 'DASHBOARD_VER' },
-        { label: 'Nuevo ticket', icon: 'bi bi-plus-circle', route: '/nuevo-ticket', module: 'TICKETS', permission: 'TICKETS_CREAR' },
-        { label: 'Tickets', icon: 'bi bi-list-check', route: '/tickets', module: 'TICKETS', permission: 'TICKETS_VER' },
-        { label: 'Clientes', icon: 'bi bi-people', route: '/clientes/nuevo', module: 'CLIENTES', permission: 'CLIENTES_VER' },
-        { label: 'Contratos', icon: 'bi bi-journal-text', route: '/contratos/nuevo', module: 'CONTRATOS', permission: 'CONTRATOS_VER' },
+        { label: 'Dashboard',       icon: 'bi bi-speedometer2',  route: '/dashboard',      module: 'DASHBOARD',  permission: 'DASHBOARD_VER'  },
+        { label: 'Nuevo ticket',    icon: 'bi bi-plus-circle',   route: '/nuevo-ticket',   module: 'TICKETS',    permission: 'TICKETS_CREAR'  },
+        { label: 'Tickets',         icon: 'bi bi-list-check',    route: '/tickets',        module: 'TICKETS',    permission: 'TICKETS_VER'    },
+        { label: 'Clientes',        icon: 'bi bi-people',        route: '/clientes/nuevo', module: 'CLIENTES',   permission: 'CLIENTES_VER'   },
+        { label: 'Contratos',       icon: 'bi bi-journal-text',  route: '/contratos/nuevo',module: 'CONTRATOS',  permission: 'CONTRATOS_VER'  },
+        { label: 'Administración',  icon: 'bi bi-gear-fill',     route: '/admin',          adminOnly: true       },
     ];
 
     auth = inject(AuthService);
@@ -43,7 +45,10 @@ export class AppComponent {
     }
 
     visibleItems() {
-        return this.items.filter(i => this.auth.can(i.module, i.permission));
+        return this.items.filter(i => {
+            if (i.adminOnly) return this.auth.isAdmin();
+            return this.auth.can(i.module!, i.permission);
+        });
     }
 
     toggleSidebar(): void {

@@ -5,6 +5,7 @@ import dashboardRouter from './dashboard.routes';
 import clientesRouter from './clientes.routes';
 import contratosRouter from './contratros.routes';
 import authRoutes from './auth.routes';
+import adminRouter from './admin.routes';
 
 
 const router = Router();
@@ -31,5 +32,8 @@ router.use('/clientes', clientesRouter);
 
 // Rutas de contratos
 router.use('/contratos', contratosRouter);
+
+// Rutas de administración (solo ADMIN_GLOBAL)
+router.use('/admin', adminRouter);
 
 export default router;

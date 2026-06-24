@@ -3,9 +3,10 @@
 // Requiere schema.sql ya aplicado y backend/.env configurado
 
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../backend/.env') });
-const { Pool } = require(path.join(__dirname, '../backend/node_modules/pg'));
-const bcrypt  = require(path.join(__dirname, '../backend/node_modules/bcrypt'));
+const backendModules = path.join(__dirname, '../backend/node_modules');
+require(path.join(backendModules, 'dotenv')).config({ path: path.join(__dirname, '../backend/.env') });
+const { Pool } = require(path.join(backendModules, 'pg'));
+const bcrypt  = require(path.join(backendModules, 'bcrypt'));
 
 const pool = new Pool({
     host:     process.env.PGHOST     || 'localhost',
@@ -112,8 +113,8 @@ async function seed() {
         for (const [nombre, nit, sector, fecha, estado] of clientesData) {
             await client.query(
                 `INSERT INTO clientes (nombre, nit, sector, fecha_inicio_relacion, estado)
-                 VALUES ($1,$2,$3,$4,$5) ON CONFLICT (nit) DO NOTHING`,
-                [nombre, nit, sector, fecha, estado]
+                 SELECT $1,$2,$3,$4,$5 WHERE NOT EXISTS (SELECT 1 FROM clientes WHERE nit = $6)`,
+                [nombre, nit, sector, fecha, estado, nit]
             );
         }
         const { rows: cliRows } = await client.query('SELECT id_cliente, nombre FROM clientes ORDER BY id_cliente');
