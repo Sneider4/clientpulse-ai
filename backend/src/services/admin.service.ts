@@ -175,11 +175,22 @@ export async function actualizarModulosCliente(idCliente: number, moduloIds: num
     }
 }
 
-// ── CLIENTES (para selects) ───────────────────────────────────────────────────
+// ── CLIENTES ──────────────────────────────────────────────────────────────────
 
 export async function listarClientesBasico() {
     const { rows } = await pool.query(`
-        SELECT id_cliente, nombre, nit FROM clientes ORDER BY nombre
+        SELECT id_cliente, nombre, nit, estado FROM clientes ORDER BY nombre
     `);
     return rows;
+}
+
+export async function toggleClienteEstado(id: number) {
+    const { rows } = await pool.query(`
+        UPDATE clientes
+        SET estado = CASE WHEN estado = 'ACTIVO' THEN 'INACTIVO' ELSE 'ACTIVO' END
+        WHERE id_cliente = $1
+        RETURNING id_cliente, nombre, estado
+    `, [id]);
+    if (rows.length === 0) throw new Error('Cliente no encontrado');
+    return rows[0];
 }

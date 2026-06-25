@@ -26,7 +26,7 @@ export interface ModuloAdmin {
 }
 
 export interface ClienteBasico {
-    id_cliente: number; nombre: string; nit: string;
+    id_cliente: number; nombre: string; nit: string; estado: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -53,6 +53,7 @@ export class AdminService {
     getModulosCliente(id: number)          { return this.http.get<any>(`${BASE}/clientes/${id}/modulos`); }
     actualizarModulos(id: number, m: number[]) { return this.http.put<any>(`${BASE}/clientes/${id}/modulos`, { modulos: m }); }
 
-    // Clientes básico
+    // Clientes
     getClientes()                          { return this.http.get<any>(`${BASE}/clientes`); }
+    toggleCliente(id: number)              { return this.http.patch<any>(`${BASE}/clientes/${id}/toggle`, {}); }
 }

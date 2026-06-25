@@ -9,12 +9,29 @@
                 <h6 class="fw-bold mb-3">Clientes</h6>
                 <div class="list-group list-group-flush">
                     @for (c of clientes; track c.id_cliente) {
-                        <button type="button" class="list-group-item list-group-item-action"
-                                [class.active]="clienteId === c.id_cliente"
-                                (click)="seleccionarCliente(c.id_cliente)">
-                            <span class="fw-semibold">{{ c.nombre }}</span>
-                            <small class="d-block text-muted">{{ c.nit }}</small>
-                        </button>
+                        <div class="list-group-item px-2 py-2"
+                             [class.list-group-item-secondary]="c.estado === 'INACTIVO'">
+                            <div class="d-flex align-items-center gap-2">
+                                <button type="button" class="btn btn-link p-0 text-start flex-grow-1 text-decoration-none"
+                                        [class.text-muted]="c.estado === 'INACTIVO'"
+                                        (click)="seleccionarCliente(c.id_cliente)">
+                                    <span class="fw-semibold d-block" [class.fw-bold]="clienteId === c.id_cliente">{{ c.nombre }}</span>
+                                    <small class="text-muted">{{ c.nit }}</small>
+                                </button>
+                                <div class="d-flex flex-column align-items-end gap-1 flex-shrink-0">
+                                    <span class="badge" [class.text-bg-success]="c.estado === 'ACTIVO'" [class.text-bg-danger]="c.estado === 'INACTIVO'">
+                                        {{ c.estado }}
+                                    </span>
+                                    <button class="btn btn-sm"
+                                            [class.btn-outline-danger]="c.estado === 'ACTIVO'"
+                                            [class.btn-outline-success]="c.estado === 'INACTIVO'"
+                                            (click)="toggleCliente(c)"
+                                            [title]="c.estado === 'ACTIVO' ? 'Desactivar cliente' : 'Activar cliente'">
+                                        <i class="bi" [class.bi-slash-circle]="c.estado === 'ACTIVO'" [class.bi-check-circle]="c.estado === 'INACTIVO'"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     }
                 </div>
             </div>

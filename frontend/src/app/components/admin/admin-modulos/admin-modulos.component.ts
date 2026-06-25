@@ -56,4 +56,25 @@ export class AdminModulosComponent implements OnInit {
     }
 
     clienteNombre() { return this.clientes.find(c => c.id_cliente === this.clienteId)?.nombre ?? ''; }
+
+    toggleCliente(cliente: ClienteBasico) {
+        const accion = cliente.estado === 'ACTIVO' ? 'desactivar' : 'activar';
+        Swal.fire({
+            title: `¿${accion.charAt(0).toUpperCase() + accion.slice(1)} a "${cliente.nombre}"?`,
+            text: cliente.estado === 'ACTIVO'
+                ? 'Sus usuarios no podrán iniciar sesión.'
+                : 'Sus usuarios podrán volver a iniciar sesión.',
+            icon: 'warning', showCancelButton: true,
+            confirmButtonText: `Sí, ${accion}`, confirmButtonColor: cliente.estado === 'ACTIVO' ? '#d33' : '#28a745',
+        }).then(res => {
+            if (!res.isConfirmed) return;
+            this.admin.toggleCliente(cliente.id_cliente).subscribe({
+                next: r => {
+                    cliente.estado = r.data.estado;
+                    Swal.fire({ icon: 'success', title: `Cliente ${r.data.estado === 'ACTIVO' ? 'activado' : 'desactivado'}`, timer: 1500, showConfirmButton: false });
+                },
+                error: e => Swal.fire({ icon: 'error', title: 'Error', text: e.error?.message })
+            });
+        });
+    }
 }

@@ -17,9 +17,11 @@ export class AuthService {
 
     static async login(correo: string, password: string): Promise<LoginResult> {
         const where = `
-            SELECT id_usuario, nombre, correo, id_cliente, id_rol, rol, password_hash
-            FROM usuarios
-            WHERE correo = $1
+            SELECT u.id_usuario, u.nombre, u.correo, u.id_cliente, u.id_rol, u.rol, u.password_hash, u.activo,
+                   c.estado AS cliente_estado
+            FROM usuarios u
+            LEFT JOIN clientes c ON c.id_cliente = u.id_cliente
+            WHERE u.correo = $1
             LIMIT 1
         `;
         const { rows } = await pool.query(where, [correo]);
@@ -31,9 +33,16 @@ export class AuthService {
         const user = rows[0];
 
         const ok = await bcrypt.compare(password, user.password_hash);
-        console.log('Comparación de contraseñas:', password, user.password_hash, ok);
         if (!ok) {
             throw new Error('Credenciales inválidas');
+        }
+
+        if (!user.activo) {
+            throw new Error('Tu cuenta está desactivada. Contacta al administrador.');
+        }
+
+        if (user.id_cliente !== null && user.cliente_estado === 'INACTIVO') {
+            throw new Error('El acceso de tu empresa está desactivado. Contacta al administrador.');
         }
 
         const token = signToken({

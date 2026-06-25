@@ -70,6 +70,9 @@ export const putModulosCliente     = (req: Request, res: Response) => {
     return handle(res, () => adminService.actualizarModulosCliente(Number(req.params.id), modulos));
 };
 
-// ── CLIENTES BÁSICO (para selects) ───────────────────────────────────────────
+// ── CLIENTES ──────────────────────────────────────────────────────────────────
 
-export const getClientesBasico = (req: Request, res: Response) => handle(res, adminService.listarClientesBasico);
+export const getClientesBasico    = (req: Request, res: Response) => handle(res, adminService.listarClientesBasico);
+
+export const patchToggleCliente   = (req: Request, res: Response) =>
+    handle(res, () => adminService.toggleClienteEstado(Number(req.params.id)));

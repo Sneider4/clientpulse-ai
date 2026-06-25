@@ -6,7 +6,7 @@ import {
     getRoles, postRol, putRol, putPermisosRol, deleteRol,
     getPermisos,
     getModulosCliente, putModulosCliente,
-    getClientesBasico,
+    getClientesBasico, patchToggleCliente,
 } from '../controllers/admin.controller';
 
 const router = Router();
@@ -34,7 +34,8 @@ router.get('/permisos', getPermisos);
 router.get('/clientes/:id/modulos', getModulosCliente);
 router.put ('/clientes/:id/modulos', putModulosCliente);
 
-// Clientes básico para selects
-router.get('/clientes', getClientesBasico);
+// Clientes
+router.get  ('/clientes',           getClientesBasico);
+router.patch('/clientes/:id/toggle', patchToggleCliente);
 
 export default router;
