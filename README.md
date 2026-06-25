@@ -22,6 +22,17 @@ Plataforma SaaS de análisis de soporte al cliente con inteligencia artificial. 
    - **Recomendaciones** para el equipo de soporte
 4. El dashboard muestra los clientes con mayor riesgo, distribución de sentimientos y métricas globales
 
+### RBAC multitenant
+- Cada empresa contratante tiene sus propios usuarios con roles y permisos específicos
+- Los módulos disponibles se configuran por cliente (una empresa puede tener solo Dashboard + Tickets)
+- Los guards de Angular y los middlewares del backend validan en doble capa
+- Si un cliente es desactivado, **todos sus usuarios quedan bloqueados automáticamente** en el siguiente intento de login
+
+### Panel de administración (admin global)
+- Crear, editar y activar/desactivar usuarios
+- Crear roles y asignar permisos con matriz visual agrupada por módulo
+- Activar/desactivar módulos por empresa desde la UI, sin tocar la base de datos
+
 ## Tecnologías
 
 | Capa | Stack |
@@ -229,11 +240,16 @@ App disponible en `http://localhost:4200`
 
 ## Credenciales de prueba (tras ejecutar el seed)
 
-| Usuario | Email | Contraseña | Acceso |
-|---------|-------|------------|--------|
-| Sneider Malagón | sneider@gmail.com | 1234 | Admin global — todos los clientes y módulos |
-| Ana Rodríguez | ana@techcorp.com | 1234 | Agente — solo TechCorp S.A.S |
-| Carlos Mejía | carlos@bancol.com | 1234 | Agente — solo Bancol Finanzas |
+| Usuario | Email | Contraseña | Rol | Acceso |
+|---------|-------|------------|-----|--------|
+| Sneider Malagón | sneider@gmail.com | 1234 | ADMIN_GLOBAL | Todos los clientes y módulos + panel admin |
+| Laura Torres | sup1@techcorp.com | 1234 | SUPERVISOR | TechCorp S.A.S — todos los módulos |
+| Andrés Vargas | sup2@bancol.com | 1234 | SUPERVISOR | Bancol Finanzas — todos los módulos |
+| Camila Ruiz | agente1@techcorp.com | 1234 | AGENTE | TechCorp — solo dashboard y tickets |
+| David Morales | agente2@techcorp.com | 1234 | AGENTE | TechCorp — solo dashboard y tickets |
+| Sofía Herrera | viewer@eduplus.com | 1234 | VISUALIZADOR | EduPlus — solo lectura, módulos limitados |
+
+> **EduPlus** tiene únicamente los módulos DASHBOARD y TICKETS habilitados, lo que permite demostrar la restricción de acceso por cliente.
 
 ## Estructura del proyecto
 
@@ -252,12 +268,15 @@ clientpulse-ai/
 ├── frontend/
 │   └── src/app/
 │       ├── components/
+│       │   ├── admin/          # Panel admin: usuarios, roles/permisos, módulos por cliente
 │       │   ├── dashboard/      # KPIs + 3 gráficas Chart.js
 │       │   ├── tickets/        # Listado, detalle, nuevo ticket
 │       │   ├── clientes/       # Listado, detalle, crear cliente
+│       │   ├── error/          # 403 sin-acceso, 404
 │       │   └── login/
-│       ├── services/           # HTTP services + AuthService + AuthGuard
-│       └── models/             # Interfaces compartidas
+│       └── services/
+│           ├── auth/           # AuthService (signals) · authGuard · moduleGuard
+│           └── admin.service   # HTTP client para el panel admin
 └── database/
     ├── schema.sql              # Tablas, constraints e índices
     └── seed.js                 # Script Node.js con datos de prueba
