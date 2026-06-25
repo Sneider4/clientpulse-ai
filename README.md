@@ -1,6 +1,10 @@
 # ClientPulse AI
 
+**Demo en vivo:** https://clientpulse-ai-seven.vercel.app
+
 Plataforma SaaS de análisis de soporte al cliente con inteligencia artificial. Detecta sentimiento, frustración y riesgo de abandono (churn) en los tickets de soporte usando Google Gemini, y presenta un dashboard analítico en tiempo real para equipos de Customer Success.
+
+[![Demo](https://img.shields.io/badge/Demo_en_vivo-clientpulse--ai.vercel.app-4285F4?style=flat&logo=vercel&logoColor=white)](https://clientpulse-ai-seven.vercel.app)
 
 ![Angular](https://img.shields.io/badge/Angular-19-DD0031?style=flat&logo=angular&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-22-339933?style=flat&logo=nodedotjs&logoColor=white)
