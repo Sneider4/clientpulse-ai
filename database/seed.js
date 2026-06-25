@@ -8,13 +8,17 @@ require(path.join(backendModules, 'dotenv')).config({ path: path.join(__dirname,
 const { Pool } = require(path.join(backendModules, 'pg'));
 const bcrypt  = require(path.join(backendModules, 'bcrypt'));
 
-const pool = new Pool({
-    host:     process.env.PGHOST     || 'localhost',
-    port:     Number(process.env.PGPORT) || 5432,
-    database: process.env.PGDATABASE || 'vortex',
-    user:     process.env.PGUSER     || 'postgres',
-    password: process.env.PGPASSWORD || '1234',
-});
+const pool = new Pool(
+    process.env.DATABASE_URL
+        ? { connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }
+        : {
+            host:     process.env.PGHOST     || 'localhost',
+            port:     Number(process.env.PGPORT) || 5432,
+            database: process.env.PGDATABASE || 'vortex',
+            user:     process.env.PGUSER     || 'postgres',
+            password: process.env.PGPASSWORD || '1234',
+          }
+);
 
 async function seed() {
     const client = await pool.connect();
