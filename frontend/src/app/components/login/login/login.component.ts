@@ -1,10 +1,10 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../services/auth/auth.service';
 import Swal from 'sweetalert2';
-import { catchError, Subscription, tap } from 'rxjs';
+import { catchError, tap } from 'rxjs';
 
 @Component({
     selector: 'app-login',
@@ -13,49 +13,47 @@ import { catchError, Subscription, tap } from 'rxjs';
     templateUrl: './login.component.html',
 })
 export class LoginComponent {
-
-    private subscriptions: Subscription = new Subscription();
-    private authService = inject(AuthService);
-
-
-    currentYear = new Date().getFullYear();
-
-    private fb = inject(FormBuilder);
-    private auth = inject(AuthService);
+    private auth   = inject(AuthService);
+    private fb     = inject(FormBuilder);
     private router = inject(Router);
 
+    currentYear   = new Date().getFullYear();
+    showPassword  = signal(false);
+    loading       = signal(false);
+    errorMessage  = '';
+
     loginForm: FormGroup = this.fb.group({
-        correo: ['sneider@gmail.com', [Validators.required]],
-        password: ['1234', [Validators.required]],
+        correo:   ['', [Validators.required, Validators.email]],
+        password: ['', Validators.required],
     });
 
-    errorMessage = '';
+    togglePassword() { this.showPassword.update(v => !v); }
+
+    fillDemo(correo: string) {
+        this.loginForm.patchValue({ correo, password: '1234' });
+        this.errorMessage = '';
+    }
 
     onSubmit() {
         if (this.loginForm.invalid) {
-            this.errorMessage = 'Debe ingresar correo y contraseña.';
+            this.loginForm.markAllAsTouched();
             return;
         }
+        this.loading.set(true);
+        this.errorMessage = '';
 
         const { correo, password } = this.loginForm.value;
 
-        const usuario = this.authService.login(correo, password).pipe(
-            tap((usuarioLogueado) => {
-                console.log('Usuario logueado:', usuarioLogueado);
+        this.auth.login(correo, password).pipe(
+            tap(() => {
                 this.router.navigate(['/dashboard']);
-                Swal.fire({
-                    icon: "success",
-                    title: "Bienvenido",
-                    text: "Has iniciado sesión correctamente.",
-                    showConfirmButton: false,
-                    timer: 1500
-                });
+                Swal.fire({ icon: 'success', title: 'Bienvenido', text: 'Has iniciado sesión correctamente.', showConfirmButton: false, timer: 1500 });
             }),
-            catchError((error) => {
-                this.errorMessage = 'Error: ' + (error?.error?.message || error.message || 'Desconocido');
+            catchError(error => {
+                this.errorMessage = error?.error?.message || error.message || 'Error al iniciar sesión';
+                this.loading.set(false);
                 throw error;
             }),
-        ).subscribe();
-        this.subscriptions.add(usuario);
+        ).subscribe({ complete: () => this.loading.set(false) });
     }
 }
