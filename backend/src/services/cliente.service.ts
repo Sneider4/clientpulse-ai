@@ -1,6 +1,6 @@
 // src/services/cliente.service.ts
 import { pool } from '../db/pool';
-import { Cliente, ClienteConContratosActivos, ClienteResumen, Contrato, ContratoInput } from '../models/cliente.model';
+import { Cliente, ClienteResumen, Contrato, ContratoInput } from '../models/cliente.model';
 
 export async function crearCliente(data: Cliente): Promise<Cliente> {
     const {
@@ -90,7 +90,8 @@ export async function listarContratos(): Promise<Contrato[]> {
     const query = `
         SELECT
             c.id_contrato,
-            cli.nit AS id_cliente,          -- ⬅️ aquí devolvemos el nit EN VEZ del ID numérico
+            c.id_cliente,
+            cli.nombre AS nombre_cliente,
             c.nombre_proyecto,
             c.fecha_inicio,
             c.fecha_fin,
@@ -184,18 +185,17 @@ export async function getClienteResumen(idCliente: number): Promise<ClienteResum
         nivel_servicio: row.nivel_servicio
     }));
 
-    // Resumen agregado de tickets + churn
+    // Resumen agregado de tickets + churn (por id_cliente directo — los tickets
+    // ya no dependen de id_contrato desde el rediseño de servicios)
     const resumenQuery = `
         SELECT
             COUNT(t.id_ticket) AS total_tickets,
             AVG(a.score_churn) AS promedio_score_churn,
             MODE() WITHIN GROUP (ORDER BY a.riesgo_churn) AS riesgo_predominante
-        FROM contratos ct
-        JOIN tickets t 
-        ON t.id_contrato = ct.id_contrato
-        JOIN analisis_ticket a 
+        FROM tickets t
+        JOIN analisis_ticket a
         ON a.id_ticket = t.id_ticket
-        WHERE ct.id_cliente = $1
+        WHERE t.id_cliente = $1
     `;
     const resumenResult = await pool.query(resumenQuery, [idCliente]);
 
@@ -208,10 +208,9 @@ export async function getClienteResumen(idCliente: number): Promise<ClienteResum
         SELECT
             a.riesgo_churn,
             COUNT(*) AS cantidad
-        FROM contratos ct
-        JOIN tickets t ON t.id_contrato = ct.id_contrato
+        FROM tickets t
         JOIN analisis_ticket a ON a.id_ticket = t.id_ticket
-        WHERE ct.id_cliente = $1
+        WHERE t.id_cliente = $1
         GROUP BY a.riesgo_churn
     `;
     const ticketsPorRiesgoResult = await pool.query(ticketsPorRiesgoQuery, [
@@ -224,7 +223,6 @@ export async function getClienteResumen(idCliente: number): Promise<ClienteResum
     }));
 
     // Últimos tickets con análisis
-    // cSpell:disable
     const ticketsRecientesQuery = `
         SELECT
             t.id_ticket,
@@ -239,22 +237,20 @@ export async function getClienteResumen(idCliente: number): Promise<ClienteResum
             a.riesgo_churn,
             a.es_potencial_phishing,
             a.tiene_datos_sensibles,
-            ct.nombre_proyecto,
-            ct.id_contrato
+            sv.nombre AS nombre_servicio
 
-        FROM contratos ct
+        FROM tickets t
 
-        JOIN tickets t 
-        ON t.id_contrato = ct.id_contrato
+        LEFT JOIN servicios sv
+        ON sv.id_servicio = t.id_servicio
 
-        LEFT JOIN analisis_ticket a 
+        LEFT JOIN analisis_ticket a
         ON a.id_ticket = t.id_ticket
 
-        WHERE ct.id_cliente = $1
+        WHERE t.id_cliente = $1
         ORDER BY t.fecha_creacion DESC
         LIMIT 20
     `;
-    // cSpell:enable
     const ticketsRecientesResult = await pool.query(ticketsRecientesQuery, [
         idCliente
     ]);
@@ -272,9 +268,7 @@ export async function getClienteResumen(idCliente: number): Promise<ClienteResum
         riesgo_churn: row.riesgo_churn,
         es_potencial_phishing: row.es_potencial_phishing,
         tiene_datos_sensibles: row.tiene_datos_sensibles,
-        nit: row.nit,
-        nombre_proyecto: row.nombre_proyecto,
-        id_contrato: row.id_contrato,
+        nombre_servicio: row.nombre_servicio,
     }));
 
     return {
@@ -290,53 +284,3 @@ export async function getClienteResumen(idCliente: number): Promise<ClienteResum
     };
 }
 
-
-
-export async function getClientePorNitConContratosActivos(nit: string): Promise<ClienteConContratosActivos | null> {
-    // 1. Buscar cliente por NIT
-    const clienteQuery = `
-        SELECT id_cliente, nombre, nit, sector, fecha_inicio_relacion, estado
-        FROM clientes
-        WHERE nit = $1
-    `;
-    const clienteResult = await pool.query(clienteQuery, [nit]);
-
-    if (clienteResult.rowCount === 0) {
-        return null;
-    }
-
-    const c = clienteResult.rows[0];
-
-    const cliente = {
-        id_cliente: c.id_cliente,
-        nombre: c.nombre,
-        nit: c.nit,
-        sector: c.sector,
-        fecha_inicio_relacion: c.fecha_inicio_relacion,
-        estado: c.estado
-    };
-
-    // 2. Contratos activos
-    const contratosQuery = `
-        SELECT id_contrato, nombre_proyecto, fecha_inicio, fecha_fin, estado, nivel_servicio
-        FROM contratos
-        WHERE id_cliente = $1
-        AND estado = 'VIGENTE'
-        ORDER BY fecha_inicio DESC
-    `;
-    const contratosResult = await pool.query(contratosQuery, [cliente.id_cliente]);
-
-    const contratos_activos = contratosResult.rows.map((row: any) => ({
-        id_contrato: row.id_contrato,
-        nombre_proyecto: row.nombre_proyecto,
-        fecha_inicio: row.fecha_inicio,
-        fecha_fin: row.fecha_fin,
-        estado: row.estado,
-        nivel_servicio: row.nivel_servicio
-    }));
-
-    return {
-        cliente,
-        contratos_activos
-    };
-}

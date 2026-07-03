@@ -1,0 +1,88 @@
+<div class="vx-guia-backdrop" (click)="onBackdropClick($event)">
+    <div class="vx-guia-panel vx-card">
+        <div class="vx-guia-header">
+            <div>
+                <p class="vx-label mb-1 text-uppercase">Guía rápida</p>
+                <h3 class="fw-bold mb-0">¿Cómo funciona ClientPulse AI?</h3>
+            </div>
+            <button type="button" class="btn-close" aria-label="Cerrar" (click)="cerrar.emit()"></button>
+        </div>
+
+        <div class="vx-guia-body">
+            <p class="text-muted">
+                Hola {{ nombreUsuario }}, esta es tu hoja de ruta para no perderte en la plataforma. El contenido de abajo se ajusta a lo que tú puedes hacer.
+            </p>
+
+            <!-- Tu rol -->
+            <div class="vx-card-accent vx-guia-rol mb-4">
+                <p class="vx-label-light mb-1 text-uppercase">Tu rol actual</p>
+                <h4 class="fw-bold mb-1">{{ rolLabel }}</h4>
+                <p class="mb-0 opacity-85">{{ rolDescripcion }}</p>
+            </div>
+
+            <!-- Qué puedes hacer -->
+            @if (menuItems.length > 0) {
+                <h5 class="fw-semibold mb-2">Tu menú</h5>
+                <div class="row g-2 mb-4">
+                    @for (item of menuItems; track item.route) {
+                        <div class="col-6 col-md-4">
+                            <a [routerLink]="item.route" (click)="cerrar.emit()" class="vx-guia-menu-item">
+                                @if (item.icon) {
+                                    <i [class]="'bi ' + item.icon"></i>
+                                }
+                                <span>{{ item.label }}</span>
+                            </a>
+                        </div>
+                    }
+                </div>
+            }
+
+            <!-- Flujo paso a paso -->
+            <h5 class="fw-semibold mb-2">Flujo recomendado</h5>
+            <ol class="vx-guia-pasos mb-4">
+                @for (paso of pasos; track paso.titulo; let i = $index) {
+                    <li>
+                        <span class="vx-guia-paso-num">{{ i + 1 }}</span>
+                        <div>
+                            <strong>{{ paso.titulo }}</strong>
+                            <p class="text-muted small mb-0">{{ paso.detalle }}</p>
+                        </div>
+                    </li>
+                }
+            </ol>
+
+            <!-- Glosario -->
+            <h5 class="fw-semibold mb-2">Glosario</h5>
+            <div class="row g-2">
+                <div class="col-md-6">
+                    <div class="vx-guia-glosario-item">
+                        <strong>Riesgo de churn</strong>
+                        <p class="text-muted small mb-0">Probabilidad de que el cliente abandone, calculada por IA sobre cada ticket (BAJO / MEDIO / ALTO).</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="vx-guia-glosario-item">
+                        <strong>Sentimiento</strong>
+                        <p class="text-muted small mb-0">Tono emocional detectado en la solicitud (POSITIVO / NEUTRO / NEGATIVO).</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="vx-guia-glosario-item">
+                        <strong>Prioridad</strong>
+                        <p class="text-muted small mb-0">Urgencia asignada automáticamente al ticket (BAJA / MEDIA / ALTA / CRÍTICA).</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="vx-guia-glosario-item">
+                        <strong>Score de churn</strong>
+                        <p class="text-muted small mb-0">Número de 0 a 100 que resume el riesgo — más alto, más urgente actuar.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="vx-guia-footer">
+            <button type="button" class="btn btn-primary" (click)="cerrar.emit()">Entendido</button>
+        </div>
+    </div>
+</div>

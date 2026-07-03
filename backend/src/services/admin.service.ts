@@ -53,6 +53,42 @@ export async function actualizarUsuario(id: number, data: {
     return rows[0];
 }
 
+// ── EQUIPO (usuarios finales por empresa cliente) ──────────────────────────────
+// A diferencia de crearUsuario/listarUsuarios (solo admin global), estas dos
+// funciones las usa un SUPERVISOR sobre su propia empresa — por eso reciben
+// idCliente explícito en vez de dejarlo elegir en el body.
+
+export async function crearUsuarioFinal(
+    idCliente: number,
+    data: { nombre: string; correo: string; password: string }
+) {
+    const { rows: rolRows } = await pool.query(
+        `SELECT id_rol FROM roles WHERE codigo = 'USUARIO_FINAL' LIMIT 1`
+    );
+    if (rolRows.length === 0) {
+        throw new Error('El rol USUARIO_FINAL no está configurado');
+    }
+    return crearUsuario({
+        nombre: data.nombre,
+        correo: data.correo,
+        password: data.password,
+        id_rol: rolRows[0].id_rol,
+        id_cliente: idCliente,
+        rol: 'USUARIO_FINAL'
+    });
+}
+
+export async function listarUsuariosFinalesPorCliente(idCliente: number) {
+    const { rows } = await pool.query(`
+        SELECT u.id_usuario, u.nombre, u.correo, u.activo
+        FROM usuarios u
+        JOIN roles r ON r.id_rol = u.id_rol
+        WHERE u.id_cliente = $1 AND r.codigo = 'USUARIO_FINAL'
+        ORDER BY u.nombre
+    `, [idCliente]);
+    return rows;
+}
+
 export async function toggleUsuarioActivo(id: number) {
     const { rows } = await pool.query(`
         UPDATE usuarios SET activo = NOT activo

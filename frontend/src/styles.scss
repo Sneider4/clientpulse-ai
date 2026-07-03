@@ -1,1 +1,325 @@
 /* You can add global styles to this file, and also import other style files */
+
+:root {
+    /* Paleta marca — azul marino (mantiene los nombres --vx-sage-* por compatibilidad,
+       los valores ya no son verdes: son la escala de navy elegida por el usuario) */
+    --vx-sage: #4a7fa7;
+    --vx-sage-dark: #1a3d63;
+    --vx-sage-darker: #0a1931;
+    --vx-sage-soft: #b3cfe5;
+    --vx-sage-softer: #e3edf6;
+    --vx-beige: #f6fafd;
+    --vx-beige-dark: #e8f0f7;
+    --vx-card: #ffffff;
+    --vx-ink: #101826;
+    --vx-muted: #5c6b7d;
+    --vx-radius-lg: 1.5rem;
+    --vx-radius-md: 1rem;
+    --vx-radius-sm: 0.65rem;
+    --vx-shadow: 0 10px 30px -12px rgba(10, 25, 49, 0.18);
+    --vx-shadow-sm: 0 4px 14px -6px rgba(10, 25, 49, 0.12);
+
+    /* Paleta de estados (validada dataviz) — bajo/medio/alto/sin dato.
+       Fija a propósito: no sigue la marca, para que el color de riesgo nunca se confunda con el acento. */
+    --vx-good: #3f7d33;
+    --vx-warn: #c98a1e;
+    --vx-crit: #c0563f;
+    --vx-nd: #a8a296;
+    --vx-grid: #e3e8ee;
+
+    /* Ancho del contenedor principal de las páginas internas */
+    --vx-container-max: 1760px;
+
+    /* Overrides de Bootstrap */
+    --bs-primary: var(--vx-sage);
+    --bs-primary-rgb: 74, 127, 167;
+    --bs-body-bg: var(--vx-beige);
+    --bs-body-color: var(--vx-ink);
+    --bs-link-color: var(--vx-sage-dark);
+    --bs-link-hover-color: var(--vx-sage-darker);
+}
+
+html,
+body {
+    background-color: var(--vx-beige);
+    color: var(--vx-ink);
+}
+
+/* Contenedor ancho reutilizable: reemplaza el .container de Bootstrap (limitado a 1320px)
+   para que las páginas internas aprovechen todo el ancho disponible sin quedar descentradas. */
+.vx-container {
+    width: 100%;
+    max-width: var(--vx-container-max);
+    margin-inline: auto;
+    padding-inline: clamp(1rem, 3vw, 2.5rem);
+}
+
+/* Botones */
+.btn-primary {
+    --bs-btn-bg: var(--vx-sage);
+    --bs-btn-border-color: var(--vx-sage);
+    --bs-btn-hover-bg: var(--vx-sage-dark);
+    --bs-btn-hover-border-color: var(--vx-sage-dark);
+    --bs-btn-active-bg: var(--vx-sage-dark);
+    --bs-btn-active-border-color: var(--vx-sage-dark);
+    --bs-btn-disabled-bg: var(--vx-sage);
+    --bs-btn-disabled-border-color: var(--vx-sage);
+}
+
+.btn-dark {
+    --bs-btn-bg: var(--vx-sage-darker);
+    --bs-btn-border-color: var(--vx-sage-darker);
+    --bs-btn-hover-bg: var(--vx-sage-dark);
+    --bs-btn-hover-border-color: var(--vx-sage-dark);
+    --bs-btn-active-bg: var(--vx-sage-dark);
+    --bs-btn-active-border-color: var(--vx-sage-dark);
+    --bs-btn-disabled-bg: var(--vx-sage-darker);
+    --bs-btn-disabled-border-color: var(--vx-sage-darker);
+}
+
+.btn-outline-primary {
+    --bs-btn-color: var(--vx-sage-dark);
+    --bs-btn-border-color: var(--vx-sage);
+    --bs-btn-hover-bg: var(--vx-sage);
+    --bs-btn-hover-border-color: var(--vx-sage);
+    --bs-btn-active-bg: var(--vx-sage);
+    --bs-btn-active-border-color: var(--vx-sage);
+}
+
+.text-primary {
+    color: var(--vx-sage-dark) !important;
+}
+
+.bg-primary {
+    background-color: var(--vx-sage) !important;
+}
+
+/* Badges / progreso siguen semántica de riesgo (rojo/amarillo/verde) sin tocar */
+
+/* Tarjetas estilo bento */
+.vx-card {
+    background: var(--vx-card);
+    border: none;
+    border-radius: var(--vx-radius-lg);
+    box-shadow: var(--vx-shadow-sm);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.vx-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--vx-shadow);
+}
+
+.vx-card-accent {
+    background: linear-gradient(155deg, var(--vx-sage) 0%, var(--vx-sage-dark) 100%);
+    color: #fff;
+    border: none;
+    border-radius: var(--vx-radius-lg);
+    box-shadow: var(--vx-shadow);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.vx-card-accent:hover {
+    transform: translateY(-3px);
+}
+
+.vx-card-warn {
+    border-left: 4px solid var(--vx-warn);
+}
+
+/* Icono circular usado en tarjetas KPI para balancear el espacio */
+.vx-tile-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    background: var(--vx-sage-softer);
+    color: var(--vx-sage-dark);
+    flex-shrink: 0;
+}
+
+.vx-tile-icon-light {
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+}
+
+/* Evita que el texto junto al icono desborde la tarjeta en pantallas angostas:
+   por defecto un hijo flex no se encoge bajo su ancho de contenido, así que
+   un valor largo (ej. una cifra en pesos) empuja el layout en vez de envolver. */
+.vx-tile-icon + div {
+    min-width: 0;
+}
+
+.vx-pill {
+    border-radius: 999px;
+}
+
+/* Badges y barras de estado (bajo/medio/alto/sin dato) */
+.vx-badge-good,
+.vx-bar-good {
+    background-color: var(--vx-good) !important;
+    color: #fff;
+}
+
+.vx-badge-warn,
+.vx-bar-warn {
+    background-color: var(--vx-warn) !important;
+    color: #fff;
+}
+
+.vx-badge-crit,
+.vx-bar-crit {
+    background-color: var(--vx-crit) !important;
+    color: #fff;
+}
+
+.vx-badge-nd {
+    background-color: var(--vx-nd) !important;
+    color: #fff;
+}
+
+/* Rampa ordinal azul marino (severidad/orden, no alerta binaria): claro→oscuro.
+   Reutiliza las variables de marca porque son exactamente esos mismos tonos. */
+.vx-badge-navy-1,
+.vx-bar-navy-1 {
+    background-color: var(--vx-sage-soft) !important;
+    color: var(--vx-ink);
+}
+
+.vx-badge-navy-2,
+.vx-bar-navy-2 {
+    background-color: var(--vx-sage) !important;
+    color: #fff;
+}
+
+.vx-badge-navy-3,
+.vx-bar-navy-3 {
+    background-color: var(--vx-sage-dark) !important;
+    color: #fff;
+}
+
+.vx-badge-navy-4,
+.vx-bar-navy-4 {
+    background-color: var(--vx-sage-darker) !important;
+    color: #fff;
+}
+
+/* Tarjetas Bootstrap existentes (rounded-4 shadow-sm) heredan look suave */
+.card {
+    border: none;
+    box-shadow: var(--vx-shadow-sm);
+}
+
+/* Tabla "moderna": sin rejilla, encabezado ligero en mayúsculas, separador
+   sutil por fila en vez de bordes por celda, más aire vertical. Se aplica
+   agregando .vx-table junto a .table en cualquier <table> de la app.
+   Bootstrap define --bs-table-bg: var(--bs-body-bg) por defecto, así que sin
+   este override cada celda hereda el azul pálido del fondo de la página en
+   vez de quedar transparente sobre la tarjeta blanca que la contiene. */
+.vx-table {
+    --bs-table-bg: transparent;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+/* Sin esto, el navegador comprime unas columnas (a un solo carácter) y hace
+   wrap en otras en vez de calcular el ancho natural de la tabla — el
+   scroll horizontal de .table-responsive queda inservible en móvil. Con
+   nowrap la tabla crece a su ancho real y el scroll revela cada columna
+   completa y legible. */
+.vx-table > thead > tr > th,
+.vx-table > tbody > tr > td {
+    white-space: nowrap;
+}
+
+.vx-table > thead {
+    background: transparent;
+}
+
+.vx-table > thead > tr > th {
+    border: none;
+    border-bottom: 1px solid var(--vx-grid);
+    padding-block: 0.85rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--vx-muted);
+    background: transparent;
+}
+
+.vx-table > tbody > tr > td {
+    border: none;
+    border-bottom: 1px solid var(--vx-grid);
+    padding-block: 0.9rem;
+}
+
+.vx-table > tbody > tr:last-child > td {
+    border-bottom: none;
+}
+
+.vx-table.table-hover > tbody > tr:hover > * {
+    background-color: var(--vx-beige-dark);
+}
+
+.vx-table > tbody > tr > td:first-child {
+    font-weight: 600;
+    color: var(--vx-ink);
+}
+
+/* Badges en forma de píldora en toda la app: menos "cuadrícula", más suave */
+.badge {
+    border-radius: 999px;
+    padding-inline: 0.7em;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+/* Tabs de secciones: subrayado navy en vez de las pestañas-caja de Bootstrap */
+.vx-tabs {
+    border-bottom: 1px solid var(--vx-grid);
+    gap: 0.25rem;
+    flex-wrap: wrap;
+}
+
+.vx-tabs .nav-link {
+    display: inline-flex;
+    align-items: center;
+    border: none;
+    border-radius: var(--vx-radius-sm) var(--vx-radius-sm) 0 0;
+    color: var(--vx-muted);
+    font-weight: 600;
+    font-size: 0.92rem;
+    padding: 0.7rem 1.1rem;
+    margin-bottom: -1px;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.vx-tabs .nav-link i {
+    font-size: 1rem;
+}
+
+.vx-tabs .nav-link:hover {
+    color: var(--vx-sage-dark);
+    background: var(--vx-beige-dark);
+}
+
+.vx-tabs .nav-link.active {
+    color: var(--vx-sage-darker);
+    border-bottom-color: var(--vx-sage);
+    background: transparent;
+}
+
+/* SweetAlert2 en tono salvia */
+.swal2-styled.swal2-confirm {
+    background-color: var(--vx-sage) !important;
+}
+
+.swal2-popup {
+    border-radius: var(--vx-radius-md) !important;
+}

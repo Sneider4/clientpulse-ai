@@ -26,11 +26,24 @@ Plataforma SaaS de análisis de soporte al cliente con inteligencia artificial. 
    - **Recomendaciones** para el equipo de soporte
 4. El dashboard muestra los clientes con mayor riesgo, distribución de sentimientos y métricas globales
 
+### Modelo B2B2C: ventanilla de quejas sin filtrar datos comerciales
+ClientPulse AI le renta a cada empresa cliente (ej. TechCorp) una "ventanilla" para que **sus propios usuarios finales** (los clientes de TechCorp) presenten quejas o solicitudes. Ese usuario final nunca debe ver la relación comercial entre ClientPulse AI y TechCorp (precio, nivel de servicio del contrato) — el mismo principio que un estudiante nunca ve el contrato de licenciamiento entre su universidad y el proveedor del ERP.
+
+Por eso el ticket se relaciona con un **`servicio`** (catálogo propio de cada cliente, solo nombre — ej. "Portal de Facturación") y no con el `contrato` comercial (precio, `nivel_servicio`, fechas de vigencia), que permanece visible únicamente para el admin global y el staff de la empresa cliente.
+
 ### RBAC multitenant
-- Cada empresa contratante tiene sus propios usuarios con roles y permisos específicos
+- Cada empresa contratante tiene sus propios usuarios con roles y permisos específicos: `SUPERVISOR`, `AGENTE`, `VISUALIZADOR` y `USUARIO_FINAL` (el cliente del cliente, solo ve y crea sus propios tickets)
 - Los módulos disponibles se configuran por cliente (una empresa puede tener solo Dashboard + Tickets)
 - Los guards de Angular y los middlewares del backend validan en doble capa
 - Si un cliente es desactivado, **todos sus usuarios quedan bloqueados automáticamente** en el siguiente intento de login
+
+### Gestión operativa de tickets
+- **Asignación**: un Supervisor o Agente puede tomar un ticket sin dueño directamente desde el listado, o asignarlo a un compañero desde el detalle
+- **Estados**: `ENTREGADO` → `EN_PROCESO` → `CERRADO`, con `fecha_cierre` registrada automáticamente
+- **Conversación por ticket**: hilo de mensajes con dos tipos —
+  - `RESPUESTA`: visible tanto para el staff como para el usuario final que presentó el ticket (conversación real, de ida y vuelta)
+  - `NOTA_INTERNA`: solo visible para el staff de la empresa (`TICKETS_GESTIONAR`); el filtrado ocurre en el servidor, nunca se envía al usuario final aunque el frontend fallara
+- Todo el flujo respeta el aislamiento multi-tenant: un Supervisor de una empresa no puede leer, asignar ni comentar tickets de otra empresa (403)
 
 ### Panel de administración (admin global)
 - Crear, editar y activar/desactivar usuarios
@@ -69,37 +82,51 @@ Plataforma SaaS de análisis de soporte al cliente con inteligencia artificial. 
 │ password_hash        │    │ sector           │
 │ id_rol          FK──►│    │ fecha_inicio_rel │
 │ id_cliente FK (null) │    │ estado           │
-│ rol (desnorm.)       │    └────────┬─────────┘
-└──────────────────────┘             │
-                                     ▼
-                          ┌──────────────────────┐
-                          │      contratos       │
-                          ├──────────────────────┤
-                          │ id_contrato          │
-                          │ id_cliente      FK──►│
-                          │ nombre_proyecto      │
-                          │ fecha_inicio         │
-                          │ fecha_fin            │
-                          │ valor_mensual        │
-                          │ estado               │
-                          │ nivel_servicio       │
-                          └──────────┬───────────┘
-                                     │
-                                     ▼
-                          ┌──────────────────────┐    ┌──────────────────────────┐
-                          │       tickets        │    │     analisis_ticket      │
-                          ├──────────────────────┤    ├──────────────────────────┤
-                          │ id_ticket            │───►│ id_analisis              │
-                          │ id_contrato     FK──►│    │ id_ticket (único)   FK──►│
-                          │ titulo               │    │ sentimiento              │
-                          │ descripcion          │    │ frustracion              │
-                          │ tipo                 │    │ score_churn (0-100)      │
-                          │ prioridad            │    │ riesgo_churn             │
-                          │ estado               │    │ es_potencial_phishing    │
-                          │ fecha_creacion       │    │ tiene_datos_sensibles    │
-                          │ fecha_cierre         │    │ recomendaciones          │
-                          └──────────────────────┘    │ fecha_analisis           │
-                                                      └──────────────────────────┘
+└──────────┬────────────┘    └────┬───────┬─────┘
+           │                      │       │
+           │        ┌─────────────┘       └───────────────┐
+           │        ▼                                      ▼
+           │  ┌──────────────────────┐          ┌──────────────────────┐
+           │  │      contratos       │          │       servicios      │
+           │  │  (solo admin/staff)  │          │  (catálogo visible   │
+           │  ├──────────────────────┤          │   al usuario final)  │
+           │  │ id_contrato          │          ├──────────────────────┤
+           │  │ id_cliente      FK──►│          │ id_servicio          │
+           │  │ nombre_proyecto      │          │ id_cliente      FK──►│
+           │  │ valor_mensual        │          │ nombre               │
+           │  │ nivel_servicio       │          │ estado               │
+           │  │ estado               │          └───────────┬──────────┘
+           │  └──────────────────────┘                      │
+           │                                                 ▼
+           │                                   ┌──────────────────────────┐
+           └──────────────────────────────────►│         tickets          │
+                        id_usuario_creador ────►├──────────────────────────┤    ┌──────────────────────────┐
+                        id_agente_asignado ────►│ id_ticket                │───►│     analisis_ticket      │
+                                                 │ id_cliente          FK──►│    ├──────────────────────────┤
+                                                 │ id_servicio         FK──►│    │ id_analisis              │
+                                                 │ id_usuario_creador  FK──►│    │ id_ticket (único)   FK──►│
+                                                 │ id_agente_asignado  FK──►│    │ sentimiento              │
+                                                 │ titulo                   │    │ frustracion              │
+                                                 │ descripcion               │    │ score_churn (0-100)      │
+                                                 │ tipo                      │    │ riesgo_churn             │
+                                                 │ prioridad                 │    │ es_potencial_phishing    │
+                                                 │ estado                    │    │ tiene_datos_sensibles    │
+                                                 │ fecha_creacion            │    │ recomendaciones          │
+                                                 │ fecha_cierre              │    │ fecha_analisis           │
+                                                 └────────────┬──────────────┘    └──────────────────────────┘
+                                                              │
+                                                              ▼
+                                                 ┌──────────────────────────┐
+                                                 │     ticket_mensajes      │
+                                                 ├──────────────────────────┤
+                                                 │ id_mensaje               │
+                                                 │ id_ticket           FK──►│
+                                                 │ id_usuario_autor    FK──►│
+                                                 │ mensaje                  │
+                                                 │ tipo (RESPUESTA/         │
+                                                 │       NOTA_INTERNA)      │
+                                                 │ fecha_creacion           │
+                                                 └──────────────────────────┘
 ```
 
 ### Valores convencionales (manejados por la aplicación)
@@ -115,6 +142,7 @@ Plataforma SaaS de análisis de soporte al cliente con inteligencia artificial. 
 | `analisis_ticket.sentimiento` | `POSITIVO`, `NEUTRO`, `NEGATIVO` |
 | `analisis_ticket.frustracion` | `BAJA`, `MEDIA`, `ALTA` |
 | `analisis_ticket.riesgo_churn` | `BAJO`, `MEDIO`, `ALTO` |
+| `ticket_mensajes.tipo` | `RESPUESTA` (visible al usuario final), `NOTA_INTERNA` (solo staff) |
 
 ## Endpoints de la API
 
@@ -138,9 +166,10 @@ Plataforma SaaS de análisis de soporte al cliente con inteligencia artificial. 
 | Método | Ruta | Descripción | Módulo | Permiso |
 |--------|------|-------------|--------|---------|
 | GET | `/clientes/consultar-clientes` | Listar todos los clientes | CLIENTES | CLIENTES_VER |
-| GET | `/clientes/consultar-cliente-por-nit/:nit` | Buscar cliente por NIT | CLIENTES | — |
 | GET | `/clientes/:id/resumen-cliente` | Detalle + churn + tickets recientes | CLIENTES | — |
 | POST | `/clientes/insertar-cliente` | Registrar nuevo cliente | CLIENTES | CLIENTES_CREAR |
+
+> No existe una ruta pública para buscar clientes por NIT: ese endpoint permitía a cualquier usuario autenticado consultar los contratos comerciales de cualquier empresa y fue eliminado por ser una fuga de datos entre tenants.
 
 ### Contratos
 
@@ -153,11 +182,25 @@ Plataforma SaaS de análisis de soporte al cliente con inteligencia artificial. 
 
 | Método | Ruta | Descripción | Módulo | Permiso |
 |--------|------|-------------|--------|---------|
-| GET | `/tickets/listadoTicket` | Listar tickets con análisis | TICKETS | TICKETS_VER |
+| GET | `/tickets/listadoTicket` | Listar tickets con análisis (scoped por cliente/creador) | TICKETS | TICKETS_VER |
 | POST | `/tickets/listadoTicketAnalisis` | Crear ticket + análisis IA | TICKETS | TICKETS_CREAR |
 | GET | `/tickets/:id/detalleTicket` | Detalle de un ticket | TICKETS | TICKETS_VER |
-| GET | `/tickets/contexto-creacion` | Datos para crear ticket (usuario autenticado) | TICKETS | TICKETS_CREAR |
-| GET | `/tickets/contexto-creacion/:nit` | Datos para crear ticket por NIT | TICKETS | TICKETS_CREAR |
+| GET | `/tickets/contexto-creacion` | Cliente + servicios activos para crear un ticket | TICKETS | TICKETS_CREAR |
+| GET | `/tickets/agentes-disponibles` | Agentes/supervisores de la propia empresa | TICKETS | TICKETS_GESTIONAR |
+| PATCH | `/tickets/:id/asignar` | Asignar el ticket a un agente | TICKETS | TICKETS_GESTIONAR |
+| PATCH | `/tickets/:id/estado` | Cambiar estado (`ENTREGADO`/`EN_PROCESO`/`CERRADO`) | TICKETS | TICKETS_GESTIONAR |
+| GET | `/tickets/:id/mensajes` | Hilo de conversación (notas internas filtradas según permiso) | TICKETS | TICKETS_VER |
+| POST | `/tickets/:id/mensajes` | Publicar respuesta o nota interna | TICKETS | TICKETS_VER |
+
+### Equipo (staff de cada empresa cliente)
+
+| Método | Ruta | Descripción | Módulo | Permiso |
+|--------|------|-------------|--------|---------|
+| GET | `/equipo/usuarios-finales` | Listar los usuarios finales de la propia empresa | EQUIPO | USUARIOS_FINALES_GESTIONAR |
+| POST | `/equipo/usuarios-finales` | Invitar un usuario final | EQUIPO | USUARIOS_FINALES_GESTIONAR |
+| GET | `/equipo/servicios` | Catálogo de servicios de la propia empresa | EQUIPO | SERVICIOS_GESTIONAR |
+| POST | `/equipo/servicios` | Crear un servicio | EQUIPO | SERVICIOS_GESTIONAR |
+| PATCH | `/equipo/servicios/:id/toggle` | Activar/desactivar un servicio | EQUIPO | SERVICIOS_GESTIONAR |
 
 Todos los endpoints (excepto `/auth/login`) requieren el header:
 ```
@@ -252,8 +295,10 @@ App disponible en `http://localhost:4200`
 | Camila Ruiz | agente1@techcorp.com | 1234 | AGENTE | TechCorp — solo dashboard y tickets |
 | David Morales | agente2@techcorp.com | 1234 | AGENTE | TechCorp — solo dashboard y tickets |
 | Sofía Herrera | viewer@eduplus.com | 1234 | VISUALIZADOR | EduPlus — solo lectura, módulos limitados |
+| Pedro Gómez | cliente1@techcorp.com | 1234 | USUARIO_FINAL | TechCorp — solo puede crear y ver sus propios tickets |
 
 > **EduPlus** tiene únicamente los módulos DASHBOARD y TICKETS habilitados, lo que permite demostrar la restricción de acceso por cliente.
+> **Pedro Gómez** es el "cliente del cliente": presenta tickets sobre los servicios de TechCorp sin ver contratos, precios ni tickets de otros usuarios.
 
 ## Estructura del proyecto
 
@@ -273,17 +318,23 @@ clientpulse-ai/
 │   └── src/app/
 │       ├── components/
 │       │   ├── admin/          # Panel admin: usuarios, roles/permisos, módulos por cliente
-│       │   ├── dashboard/      # KPIs + 3 gráficas Chart.js
-│       │   ├── tickets/        # Listado, detalle, nuevo ticket
-│       │   ├── clientes/       # Listado, detalle, crear cliente
+│       │   ├── dashboard/      # KPIs + gráficas Chart.js
+│       │   ├── tickets/        # Listado (con filtro "asignados a mí"), detalle
+│       │   │                   # (gestión + conversación), nuevo ticket
+│       │   ├── clientes/       # Listado, detalle, crear cliente y contrato
+│       │   ├── equipo/         # Invitar usuarios finales + catálogo de servicios
+│       │   ├── guia/           # Ayuda flotante contextual según el rol
 │       │   ├── error/          # 403 sin-acceso, 404
 │       │   └── login/
 │       └── services/
 │           ├── auth/           # AuthService (signals) · authGuard · moduleGuard
+│           ├── ticket.service  # Tickets, gestión, mensajes
+│           ├── servicio.service, equipo.service
 │           └── admin.service   # HTTP client para el panel admin
 └── database/
     ├── schema.sql              # Tablas, constraints e índices
-    └── seed.js                 # Script Node.js con datos de prueba
+    ├── seed.js                 # Script Node.js con datos de prueba
+    └── migrate_*.js            # Migraciones incrementales idempotentes
 ```
 
 ## Autor

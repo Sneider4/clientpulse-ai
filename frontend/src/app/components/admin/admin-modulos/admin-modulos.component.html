@@ -1,12 +1,12 @@
-<h5 class="fw-bold mb-3">Módulos por cliente</h5>
+<h5 class="fw-semibold mb-3">Módulos por cliente</h5>
 <p class="text-muted mb-4">Selecciona un cliente para habilitar o deshabilitar sus módulos. Los usuarios de ese cliente solo verán las secciones habilitadas.</p>
 
 <div class="row g-3">
     <!-- Selector de cliente -->
     <div class="col-md-4">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <h6 class="fw-bold mb-3">Clientes</h6>
+        <div class="vx-card h-100">
+            <div class="card-body px-4 py-4">
+                <h6 class="fw-semibold mb-3">Clientes</h6>
                 <div class="list-group list-group-flush">
                     @for (c of clientes; track c.id_cliente) {
                         <div class="list-group-item px-2 py-2"
@@ -19,7 +19,7 @@
                                     <small class="text-muted">{{ c.nit }}</small>
                                 </button>
                                 <div class="d-flex flex-column align-items-end gap-1 flex-shrink-0">
-                                    <span class="badge" [class.text-bg-success]="c.estado === 'ACTIVO'" [class.text-bg-danger]="c.estado === 'INACTIVO'">
+                                    <span class="badge" [ngClass]="c.estado === 'ACTIVO' ? 'vx-badge-good' : 'vx-badge-nd'">
                                         {{ c.estado }}
                                     </span>
                                     <button class="btn btn-sm"
@@ -41,10 +41,12 @@
     <!-- Módulos del cliente seleccionado -->
     <div class="col-md-8">
         @if (!clienteId) {
-            <div class="d-flex align-items-center justify-content-center h-100 text-muted">
-                <div class="text-center">
-                    <i class="bi bi-arrow-left-circle fs-1"></i>
-                    <p class="mt-2">Selecciona un cliente para ver sus módulos</p>
+            <div class="vx-card h-100">
+                <div class="d-flex align-items-center justify-content-center h-100 text-muted py-5">
+                    <div class="text-center">
+                        <i class="bi bi-arrow-left-circle fs-1"></i>
+                        <p class="mt-2 mb-0">Selecciona un cliente para ver sus módulos</p>
+                    </div>
                 </div>
             </div>
         }
@@ -54,15 +56,15 @@
         }
 
         @if (clienteId && !loading && modulos.length > 0) {
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h6 class="fw-bold mb-1">{{ clienteNombre() }}</h6>
+            <div class="vx-card">
+                <div class="card-body px-4 py-4">
+                    <h6 class="fw-semibold mb-1">{{ clienteNombre() }}</h6>
                     <p class="text-muted small mb-3">Activa o desactiva los módulos disponibles para este cliente.</p>
 
                     <div class="row g-3 mb-4">
                         @for (m of modulos; track m.id_modulo) {
                             <div class="col-md-6">
-                                <div class="border rounded p-3 d-flex align-items-start gap-3"
+                                <div class="border rounded-3 p-3 d-flex align-items-start gap-3"
                                      [class.border-primary]="habilitados.has(m.id_modulo)"
                                      [class.bg-light]="!habilitados.has(m.id_modulo)">
                                     <div class="form-check form-switch mb-0 mt-1">
@@ -80,7 +82,7 @@
                     </div>
 
                     <div class="d-flex justify-content-end">
-                        <button class="btn btn-success" (click)="guardar()" [disabled]="loadingGuardar">
+                        <button class="btn btn-primary" (click)="guardar()" [disabled]="loadingGuardar">
                             <i class="bi bi-check-lg me-1"></i>
                             {{ loadingGuardar ? 'Guardando...' : 'Guardar cambios' }}
                         </button>

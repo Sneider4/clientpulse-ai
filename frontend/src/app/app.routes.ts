@@ -15,6 +15,7 @@ import { DetalleTicketComponent } from './components/tickets/detalle-ticket/deta
 import { PerdidoComponent } from './components/error/perdido/perdido.component';
 import { SinAccesoComponent } from './components/error/sin-acceso/sin-acceso.component';
 import { AdminPanelComponent } from './components/admin/admin-panel/admin-panel.component';
+import { EquipoComponent } from './components/equipo/equipo.component';
 
 const adminGuard = () => {
     const auth   = inject(AuthService);
@@ -68,6 +69,11 @@ export const routes: Routes = [
         path: 'admin',
         component: AdminPanelComponent,
         canMatch: [adminGuard],
+    },
+    {
+        path: 'equipo',
+        component: EquipoComponent,
+        canMatch: [moduleGuard('EQUIPO', 'USUARIOS_FINALES_GESTIONAR')],
     },
     {
         path: 'sin-acceso',

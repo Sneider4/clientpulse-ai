@@ -22,6 +22,7 @@ export class AuthService {
 
     isLoggedIn = computed(() => !!this._token());
     isAdmin    = computed(() => !!this._user() && this._user().id_cliente === null);
+    currentUser = computed(() => this._user());
 
     constructor(private http: HttpClient) { }
 
@@ -78,6 +79,22 @@ export class AuthService {
         if (!this.hasModule(moduleCode)) return false;
         if (permissionCode && !this.hasPermission(permissionCode)) return false;
         return true;
+    }
+
+    /**
+     * A dónde mandar al usuario justo después de loguearse. No todos los roles
+     * tienen DASHBOARD_VER (p. ej. USUARIO_FINAL) — redirigir siempre a
+     * '/dashboard' los mandaba directo a /sin-acceso. Prioriza el primer
+     * módulo al que realmente tienen acceso.
+     */
+    getDefaultRoute(): string {
+        if (this.can('DASHBOARD', 'DASHBOARD_VER')) return '/dashboard';
+        if (this.can('TICKETS', 'TICKETS_CREAR')) return '/nuevo-ticket';
+        if (this.can('TICKETS', 'TICKETS_VER')) return '/tickets';
+        if (this.can('CLIENTES', 'CLIENTES_VER')) return '/clientes/nuevo';
+        if (this.can('CONTRATOS', 'CONTRATOS_VER')) return '/contratos/nuevo';
+        if (this.can('EQUIPO', 'USUARIOS_FINALES_GESTIONAR')) return '/equipo';
+        return '/sin-acceso';
     }
 
     private readJson(key: string) {

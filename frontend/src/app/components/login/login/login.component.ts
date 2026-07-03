@@ -46,7 +46,7 @@ export class LoginComponent {
 
         this.auth.login(correo, password).pipe(
             tap(() => {
-                this.router.navigate(['/dashboard']);
+                this.router.navigate([this.auth.getDefaultRoute()]);
                 Swal.fire({ icon: 'success', title: 'Bienvenido', text: 'Has iniciado sesión correctamente.', showConfirmButton: false, timer: 1500 });
             }),
             catchError(error => {

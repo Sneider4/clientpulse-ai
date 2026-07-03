@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { Observable } from 'rxjs';
-import { Cliente, ClienteConContratosActivos, ClienteResumen, Contrato } from '../../models/vortex.model';
+import { Cliente, ClienteResumen, Contrato } from '../../models/vortex.model';
 
 @Injectable({
     providedIn: 'root'
@@ -14,10 +14,6 @@ export class ClienteService {
 
     getResumen(idCliente: number): Observable<ClienteResumen> {
         return this.http.get<ClienteResumen>(`${this.baseUrl}/${idCliente}/resumen-cliente`);
-    }
-
-    buscarPorNit(nit: string): Observable<ClienteConContratosActivos> {
-        return this.http.get<ClienteConContratosActivos>(`${this.baseUrl}/consultar-cliente-por-nit/${nit}`);
     }
 
     crearCliente(data: any): Observable<Cliente> {

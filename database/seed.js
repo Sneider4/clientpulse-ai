@@ -34,6 +34,7 @@ async function seed() {
             ['TICKETS',    'Gestión de tickets',     'Creación y seguimiento de tickets de soporte'],
             ['CLIENTES',   'Gestión de clientes',    'Registro y consulta de clientes'],
             ['CONTRATOS',  'Gestión de contratos',   'Registro y consulta de contratos por cliente'],
+            ['EQUIPO',     'Gestión de equipo',      'Invitar y administrar usuarios finales de la empresa'],
         ];
         for (const [codigo, nombre, descripcion] of modulosData) {
             await client.query(
@@ -48,12 +49,14 @@ async function seed() {
         // ── 2. PERMISOS (cada permiso ligado a su módulo) ───────────────────
         const permisosData = [
             ['DASHBOARD_VER',   'Ver dashboard',          'Acceso al dashboard de métricas',           'DASHBOARD'],
-            ['TICKETS_VER',     'Ver tickets',            'Listar y consultar tickets',                 'TICKETS'],
+            ['TICKETS_VER',     'Ver tickets',            'Listar y consultar tickets (propios)',       'TICKETS'],
+            ['TICKETS_VER_TODOS', 'Ver todos los tickets', 'Ver todos los tickets de la empresa, no solo los propios', 'TICKETS'],
             ['TICKETS_CREAR',   'Crear tickets',          'Registrar nuevos tickets con análisis IA',   'TICKETS'],
             ['CLIENTES_VER',    'Ver clientes',           'Listar y consultar clientes',                'CLIENTES'],
             ['CLIENTES_CREAR',  'Crear clientes',         'Registrar nuevos clientes',                  'CLIENTES'],
             ['CONTRATOS_VER',   'Ver contratos',          'Listar y consultar contratos',               'CONTRATOS'],
             ['CONTRATOS_CREAR', 'Crear contratos',        'Registrar nuevos contratos',                 'CONTRATOS'],
+            ['USUARIOS_FINALES_GESTIONAR', 'Gestionar usuarios finales', 'Invitar y administrar los usuarios finales de la propia empresa', 'EQUIPO'],
         ];
         for (const [codigo, nombre, descripcion, modCodigo] of permisosData) {
             await client.query(
@@ -68,14 +71,16 @@ async function seed() {
 
         // ── 3. ROLES ────────────────────────────────────────────────────────
         // ADMIN_GLOBAL  → todo, sin restricción de cliente
-        // SUPERVISOR    → todos los módulos de su cliente (ver + crear)
-        // AGENTE        → solo tickets (ver + crear) y dashboard (ver)
+        // SUPERVISOR    → todos los módulos de su cliente (ver + crear) + invitar usuarios finales
+        // AGENTE        → tickets (ver todos + crear) y dashboard (ver), de su cliente
         // VISUALIZADOR  → solo lectura en todo (ver pero no crear)
+        // USUARIO_FINAL → el reclamante: solo crea tickets y ve los SUYOS, nada más
         const rolesData = [
             ['ADMIN_GLOBAL',  'Administrador Global',  'Acceso total a todos los clientes y módulos'],
             ['SUPERVISOR',    'Supervisor',             'Acceso completo dentro de su cliente asignado'],
             ['AGENTE',        'Agente de Soporte',      'Crea y gestiona tickets de su cliente'],
             ['VISUALIZADOR',  'Visualizador',           'Solo lectura — no puede crear ni modificar nada'],
+            ['USUARIO_FINAL', 'Usuario final',          'Presenta y consulta únicamente sus propios tickets'],
         ];
         for (const [codigo, nombre, descripcion] of rolesData) {
             await client.query(
@@ -91,12 +96,14 @@ async function seed() {
         const rolPermisos = {
             // Admin global bypassa middleware, pero le asignamos todos igual
             'ADMIN_GLOBAL':  Object.keys(permId),
-            // Supervisor: puede todo dentro de su cliente
+            // Supervisor: puede todo dentro de su cliente + invitar usuarios finales
             'SUPERVISOR':    Object.keys(permId),
-            // Agente: dashboard (ver) + tickets (ver + crear)
-            'AGENTE':        ['DASHBOARD_VER', 'TICKETS_VER', 'TICKETS_CREAR'],
-            // Visualizador: solo ver, nada de crear
-            'VISUALIZADOR':  ['DASHBOARD_VER', 'TICKETS_VER', 'CLIENTES_VER', 'CONTRATOS_VER'],
+            // Agente: dashboard (ver) + tickets (ver TODOS los de su empresa + crear)
+            'AGENTE':        ['DASHBOARD_VER', 'TICKETS_VER', 'TICKETS_VER_TODOS', 'TICKETS_CREAR'],
+            // Visualizador: solo ver, nada de crear (pero ve todos los tickets de su empresa)
+            'VISUALIZADOR':  ['DASHBOARD_VER', 'TICKETS_VER', 'TICKETS_VER_TODOS', 'CLIENTES_VER', 'CONTRATOS_VER'],
+            // Usuario final: solo crea tickets y ve los suyos — sin TICKETS_VER_TODOS
+            'USUARIO_FINAL': ['TICKETS_VER', 'TICKETS_CREAR'],
         };
         for (const [rolCodigo, perms] of Object.entries(rolPermisos)) {
             for (const permCodigo of perms) {
@@ -128,8 +135,8 @@ async function seed() {
         // TechCorp y Bancol: todos los módulos habilitados
         // EduPlus: solo TICKETS y DASHBOARD (sin gestión de clientes/contratos)
         const modulosCliente = {
-            [cliRows[0].id_cliente]: ['DASHBOARD', 'TICKETS', 'CLIENTES', 'CONTRATOS'],
-            [cliRows[1].id_cliente]: ['DASHBOARD', 'TICKETS', 'CLIENTES', 'CONTRATOS'],
+            [cliRows[0].id_cliente]: ['DASHBOARD', 'TICKETS', 'CLIENTES', 'CONTRATOS', 'EQUIPO'],
+            [cliRows[1].id_cliente]: ['DASHBOARD', 'TICKETS', 'CLIENTES', 'CONTRATOS', 'EQUIPO'],
             [cliRows[2].id_cliente]: ['DASHBOARD', 'TICKETS'],
         };
         for (const [idCli, mods] of Object.entries(modulosCliente)) {
@@ -151,6 +158,7 @@ async function seed() {
         //   agente1@techcorp.com → AGENTE      (TechCorp, solo tickets + dashboard)
         //   agente2@techcorp.com → AGENTE      (TechCorp, solo tickets + dashboard)
         //   viewer@eduplus.com   → VISUALIZADOR (EduPlus, solo lectura)
+        //   cliente1@techcorp.com → USUARIO_FINAL (TechCorp, solo sus propios tickets)
         const hash = await bcrypt.hash('1234', 10);
 
         const usuariosData = [
@@ -160,6 +168,7 @@ async function seed() {
             ['Camila Ruiz',        'agente1@techcorp.com',  'AGENTE',       cliRows[0].id_cliente,      'AGENTE'],
             ['David Morales',      'agente2@techcorp.com',  'AGENTE',       cliRows[0].id_cliente,      'AGENTE'],
             ['Sofía Herrera',      'viewer@eduplus.com',    'VISUALIZADOR', cliRows[2].id_cliente,      'VISUALIZADOR'],
+            ['Pedro Gómez',        'cliente1@techcorp.com', 'USUARIO_FINAL', cliRows[0].id_cliente,     'USUARIO_FINAL'],
         ];
         for (const [nombre, correo, rolCodigo, idCliente, rolText] of usuariosData) {
             await client.query(
@@ -260,8 +269,10 @@ async function seed() {
   AGENTE        agente1@techcorp.com   → TechCorp  (dashboard + tickets)
   AGENTE        agente2@techcorp.com   → TechCorp  (dashboard + tickets)
   VISUALIZADOR  viewer@eduplus.com     → EduPlus   (solo lectura, sin crear)
+  USUARIO_FINAL cliente1@techcorp.com  → TechCorp  (solo sus propios tickets)
 ──────────────────────────────────────────────────────
   EduPlus solo tiene módulos DASHBOARD y TICKETS habilitados.
+  TechCorp y Bancol tienen además el módulo EQUIPO (Supervisor invita usuarios finales).
 ──────────────────────────────────────────────────────
 `);
 

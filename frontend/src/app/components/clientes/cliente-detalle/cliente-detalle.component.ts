@@ -67,6 +67,7 @@ export class ClienteDetalleComponent implements OnInit {
     }
 
     formateadorFecha(fecha: string | null) {
+        if (!fecha) return '-';
         moment.locale('es');
         return moment(fecha).format('dddd, DD [de] MMMM YYYY');
     }

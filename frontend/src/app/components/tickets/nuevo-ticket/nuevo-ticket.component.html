@@ -1,35 +1,35 @@
-<div class="container my-4">
-    <div class="mb-3">
-        <h1 class="mb-1 fw-bold">Nuevo Ticket</h1>
-        <p class="text-muted mb-0">Ingrese el Nit del cliente, seleccione un contrato y proporcione los detalles del ticket para crear y analizarlo, posterior recibirá una respuesta de parte de nuestro equipo.</p>
+<div class="vx-container my-4">
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <div class="vx-tile-icon"><i class="bi bi-plus-circle"></i></div>
+        <div>
+            <h1 class="mb-1 fw-bold">Nuevo ticket</h1>
+            <p class="text-muted mb-0">Cuéntanos tu solicitud o problema — la IA la analiza automáticamente y pronto recibirás una respuesta de nuestro equipo.</p>
+        </div>
     </div>
 
-    <form [formGroup]="form" (ngSubmit)="enviarTicket()" class="card shadow-sm">
-        <div class="card-body">
-            <!-- NIT y búsqueda -->
-            <div class="row g-3 align-items-end mb-3">
-                <div class="col-12 col-md-6 col-lg-4">
-                    <label for="nit" class="fw-semibold form-label">NIT del cliente</label>
-                    <input id="nit" type="text" formControlName="nit" class="form-control" />
-                    @if (hasError("nit", "required")) {
-                        <small class="text-danger">El NIT es obligatorio.</small>
-                    }
+    <form [formGroup]="form" (ngSubmit)="enviarTicket()" class="vx-card">
+        <div class="card-body px-4 py-4">
+            <!-- Selector de cliente (solo admin: no tiene una empresa fija) -->
+            @if (esAdmin) {
+                <div class="mb-3">
+                    <label for="id_cliente" class="fw-semibold form-label">Empresa cliente</label>
+                    <select id="id_cliente" class="form-select" (change)="onClienteSeleccionado($any($event.target).value)">
+                        <option value="">Selecciona una empresa...</option>
+                        @for (c of clientesDisponibles; track c.id_cliente) {
+                            <option [value]="c.id_cliente">{{ c.nombre }}</option>
+                        }
+                    </select>
                 </div>
-                @if (errorMessage) {
-                    <small class="text-danger mt-3 mb-0">
-                        {{ errorMessage }}
-                    </small>
-                }
+            }
 
-                <div class="col-md-3">
-                    <button type="button" class="btn btn-outline-primary" (click)="buscarClientePorNit()" [disabled]="loading">Buscar cliente</button>
-                </div>
-            </div>
+            @if (errorMessage) {
+                <div class="alert alert-danger">{{ errorMessage }}</div>
+            }
 
-            <!-- Info cliente / contratos -->
+            <!-- Info cliente / servicio -->
             @if (clienteSeleccionado) {
                 <div>
-                    <div class="border rounded p-3 mb-3 bg-light">
+                    <div class="border rounded-3 p-3 mb-3" style="background: var(--vx-beige-dark)">
                         <p class="mb-1">
                             <strong>Cliente:</strong>
                             {{ clienteSeleccionado.nombre }}
@@ -40,21 +40,18 @@
                         </p>
                     </div>
 
-                    @if (contratosActivos.length > 0) {
-                        <p class="fw-semibold mb-2">Contratos activos:</p>
+                    @if (serviciosActivos.length > 0) {
+                        <p class="fw-semibold mb-2">¿Sobre qué servicio es tu solicitud?</p>
                         <div class="list-group mb-2">
-                            @for (c of contratosActivos; track c.id_contrato) {
+                            @for (s of serviciosActivos; track s.id_servicio) {
                                 <label class="list-group-item">
-                                    <input class="form-check-input me-2" type="radio" formControlName="id_contrato" [value]="c.id_contrato" />
-                                    {{ c.nombre_proyecto }} ({{ c.nivel_servicio || "N/A" }})
+                                    <input class="form-check-input me-2" type="radio" formControlName="id_servicio" [value]="s.id_servicio" />
+                                    {{ s.nombre }}
                                 </label>
                             }
                         </div>
-                        @if (hasError("id_contrato", "required")) {
-                            <small class="text-danger">Debes seleccionar un contrato.</small>
-                        }
                     } @else {
-                        <div class="alert alert-warning">Este cliente no tiene contratos activos.</div>
+                        <div class="alert alert-secondary">No hay servicios configurados. Puedes continuar sin seleccionar uno.</div>
                     }
                 </div>
             }
@@ -80,7 +77,7 @@
 
             <div class="d-flex justify-content-end">
                 <button type="submit" class="btn btn-primary" [disabled]="loading">
-                    {{ loading ? "Enviando solicitud..." : "Crear y Analizar Ticket" }}
+                    {{ loading ? "Enviando solicitud..." : "Crear y analizar ticket" }}
                 </button>
             </div>
 
@@ -94,11 +91,11 @@
 
     <!-- Resultado del análisis -->
     @if (resultado) {
-        <div class="row g-3 mt-4">
+        <div class="row g-3 mt-1">
             <div class="col-md-6">
-                <div class="card shadow-sm h-100">
-                    <div class="card-body">
-                        <h2 class="h5 mb-3">Ticket creado</h2>
+                <div class="vx-card h-100">
+                    <div class="card-body px-4 py-4">
+                        <h2 class="h5 fw-semibold mb-3">Ticket creado</h2>
                         <p class="mb-1">
                             <strong>ID:</strong>
                             {{ resultado.ticket.id_ticket }}
@@ -115,25 +112,38 @@
                             <strong>Tipo:</strong>
                             {{ resultado.ticket.tipo }}
                         </p>
-                        <p class="mb-1">
+                        <p class="mb-1 d-flex align-items-center gap-2">
                             <strong>Prioridad:</strong>
-                            {{ resultado.ticket.prioridad }}
+                            <span class="badge" [ngClass]="{
+                                'vx-badge-crit': resultado.ticket.prioridad === 'CRITICA' || resultado.ticket.prioridad === 'ALTA',
+                                'vx-badge-warn': resultado.ticket.prioridad === 'MEDIA',
+                                'vx-badge-good': resultado.ticket.prioridad === 'BAJA',
+                                'vx-badge-nd': !resultado.ticket.prioridad
+                            }">
+                                {{ resultado.ticket.prioridad }}
+                            </span>
                         </p>
-                        <p class="mb-0">
+                        <p class="mb-0 d-flex align-items-center gap-2">
                             <strong>Estado:</strong>
-                            {{ resultado.ticket.estado }}
+                            <span class="badge vx-badge-navy-1">{{ resultado.ticket.estado }}</span>
                         </p>
                     </div>
                 </div>
             </div>
 
             <div class="col-md-6">
-                <div class="card shadow-sm h-100">
-                    <div class="card-body">
-                        <h2 class="h5 mb-3">Análisis</h2>
-                        <p class="mb-1">
+                <div class="vx-card h-100">
+                    <div class="card-body px-4 py-4">
+                        <h2 class="h5 fw-semibold mb-3">Análisis</h2>
+                        <p class="mb-1 d-flex align-items-center gap-2">
                             <strong>Sentimiento:</strong>
-                            {{ resultado.analisis.sentimiento }}
+                            <span class="badge" [ngClass]="{
+                                'vx-badge-good': resultado.analisis.sentimiento === 'POSITIVO',
+                                'vx-badge-crit': resultado.analisis.sentimiento === 'NEGATIVO',
+                                'vx-badge-nd': !resultado.analisis.sentimiento || resultado.analisis.sentimiento === 'NEUTRO'
+                            }">
+                                {{ resultado.analisis.sentimiento }}
+                            </span>
                         </p>
                         <p class="mb-1">
                             <strong>Frustración:</strong>
@@ -143,9 +153,16 @@
                             <strong>Score churn:</strong>
                             {{ resultado.analisis.score_churn }}
                         </p>
-                        <p class="mb-1">
+                        <p class="mb-1 d-flex align-items-center gap-2">
                             <strong>Riesgo churn:</strong>
-                            {{ resultado.analisis.riesgo_churn }}
+                            <span class="badge" [ngClass]="{
+                                'vx-badge-crit': resultado.analisis.riesgo_churn === 'ALTO',
+                                'vx-badge-warn': resultado.analisis.riesgo_churn === 'MEDIO',
+                                'vx-badge-good': resultado.analisis.riesgo_churn === 'BAJO',
+                                'vx-badge-nd': !resultado.analisis.riesgo_churn
+                            }">
+                                {{ resultado.analisis.riesgo_churn }}
+                            </span>
                         </p>
                         <p class="mb-1">
                             <strong>Phishing potencial:</strong>

@@ -4,6 +4,10 @@ import { TicketService } from '../../../services/ticket.service';
 import { TicketWithAnalysis } from '../../../../models/vortex.model'
 import { catchError, Subscription, tap } from 'rxjs';
 import { RouterLink } from '@angular/router';
+import { AuthService } from '../../../services/auth/auth.service';
+import Swal from 'sweetalert2';
+
+type FiltroAsignacion = 'todos' | 'sin_asignar' | 'mios';
 
 @Component({
     selector: 'app-lista-tickets',
@@ -16,18 +20,41 @@ export class ListaTicketsComponent implements OnInit {
     tickets: TicketWithAnalysis[] = [];
     loading = false;
     errorMessage = '';
+    tomandoId: number | null = null;
 
     pageSize = 10;
     currentPage = 1;
+    filtro: FiltroAsignacion = 'todos';
 
     private subscriptions: Subscription = new Subscription();
 
     private ticketService = inject(TicketService)
+    auth = inject(AuthService);
 
     constructor() { }
 
     ngOnInit(): void {
         this.cargarTickets();
+    }
+
+    get puedeGestionar(): boolean {
+        return this.auth.can('TICKETS', 'TICKETS_GESTIONAR');
+    }
+
+    get ticketsFiltrados(): TicketWithAnalysis[] {
+        if (!this.puedeGestionar || this.filtro === 'todos') return this.tickets;
+
+        const miId = this.auth.currentUser()?.id_usuario;
+        if (this.filtro === 'mios') {
+            return this.tickets.filter((t) => t.ticket.id_agente_asignado === miId);
+        }
+        // sin_asignar
+        return this.tickets.filter((t) => !t.ticket.id_agente_asignado);
+    }
+
+    cambiarFiltro(filtro: FiltroAsignacion): void {
+        this.filtro = filtro;
+        this.currentPage = 1;
     }
 
     cargarTickets() {
@@ -37,7 +64,6 @@ export class ListaTicketsComponent implements OnInit {
             tap((items) => {
                 this.loading = false;
                 this.tickets = items;
-                console.log("🚀 ~ ListaTicketsComponent ~ cargarTickets ~ this.tickets:", this.tickets)
             }),
             catchError((error) => {
                 this.loading = false;
@@ -49,35 +75,68 @@ export class ListaTicketsComponent implements OnInit {
         this.subscriptions.add(tickets);
     }
 
+    tomarTicket(idTicket: number): void {
+        const miId = this.auth.currentUser()?.id_usuario;
+        if (!miId) return;
+
+        this.tomandoId = idTicket;
+        const sub = this.ticketService.asignarTicket(idTicket, miId).pipe(
+            tap(() => {
+                this.tomandoId = null;
+                this.cargarTickets();
+            }),
+            catchError((error) => {
+                this.tomandoId = null;
+                Swal.fire({ title: 'No se pudo tomar el ticket', text: error?.error?.message || 'Ocurrió un error.', icon: 'error', confirmButtonText: 'Aceptar' });
+                throw error;
+            }),
+        ).subscribe();
+        this.subscriptions.add(sub);
+    }
 
     getRiesgoClass(riesgo: string | null) {
         switch (riesgo) {
             case 'ALTO':
-                return 'text-bg-danger';
+                return 'vx-badge-crit';
             case 'MEDIO':
-                return 'text-bg-warning';
+                return 'vx-badge-warn';
             case 'BAJO':
-                return 'text-bg-success';
+                return 'vx-badge-good';
             default:
-                return 'text-bg-secondary';
+                return 'vx-badge-nd';
         }
     }
 
     getSentimientoClass(sentimiento: string | null) {
         switch (sentimiento) {
             case 'POSITIVO':
-                return 'text-bg-success';
+                return 'vx-badge-good';
             case 'NEGATIVO':
-                return 'text-bg-danger';
+                return 'vx-badge-crit';
             case 'NEUTRO':
-                return 'text-bg-secondary';
+                return 'vx-badge-nd';
             default:
-                return 'text-bg-light text-muted';
+                return 'vx-badge-nd';
+        }
+    }
+
+    getEstadoClass(estado: string) {
+        switch (estado) {
+            case 'ENTREGADO':
+                return 'vx-badge-navy-1';
+            case 'EN_PROCESO':
+                return 'vx-badge-navy-3';
+            case 'CERRADO':
+                return 'vx-badge-good';
+            case 'BLOQUEADO_POR_SEGURIDAD':
+                return 'vx-badge-crit';
+            default:
+                return 'vx-badge-nd';
         }
     }
 
     get totalPages(): number {
-        return Math.ceil(this.tickets.length / this.pageSize) || 1;
+        return Math.ceil(this.ticketsFiltrados.length / this.pageSize) || 1;
     }
 
     get pages(): number[] {

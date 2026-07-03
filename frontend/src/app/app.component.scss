@@ -3,35 +3,6 @@ body {
     height: 100%;
 }
 
-.sidebar-hero {
-    /* para que se vea bien incluso en pantallas pequeñas */
-    padding-inline: 0.5rem;
-}
-
-.sidebar-illustration {
-    width: 130px;
-    height: 130px;
-}
-
-.sidebar-illustration svg {
-    width: 100%;
-    height: 100%;
-}
-
-.sidebar-illustration .stroke-main {
-    stroke: #0d6efd; /* azul Bootstrap */
-    stroke-width: 2.6;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
-.sidebar-illustration .stroke-soft {
-    stroke: #6c757d; /* gris suave */
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
 .app-layout {
     min-height: 100vh;
 }
@@ -45,6 +16,9 @@ body {
         left: 0;
         width: 240px; // ancho normal
         z-index: 1030;
+        background: var(--vx-card);
+        border-right: 1px solid rgba(43, 43, 38, 0.06);
+        padding: 0.75rem;
     }
 
     .content-wrapper {
@@ -54,11 +28,11 @@ body {
     /* Cuando está colapsado */
     .app-layout.sidebar-collapsed {
         .sidebar {
-            width: 72px; // solo iconos
+            width: 92px; // solo iconos
         }
 
         .content-wrapper {
-            margin-left: 72px;
+            margin-left: 92px;
         }
 
         .sidebar-logo-text {
@@ -77,9 +51,12 @@ body {
             display: none; // ocultar texto de los links
         }
 
-        .sidebar-icon {
-            margin-inline: auto;
-            font-size: 1.25rem;
+        .nav-link {
+            justify-content: center;
+        }
+
+        .sidebar-logout-btn span {
+            display: none;
         }
     }
 
@@ -87,12 +64,20 @@ body {
     .sidebar-header-collapsed {
         display: none;
     }
+
+    /* Sin sesión: no hay sidebar, contenido a ancho completo */
+    .app-layout.no-sidebar {
+        .content-wrapper {
+            margin-left: 0;
+        }
+    }
 }
 
 @media (max-width: 991.98px) {
     .sidebar {
         width: 100%;
         position: static;
+        background: var(--vx-card);
     }
 
     .content-wrapper {
@@ -102,65 +87,84 @@ body {
 
 .main-container {
     min-height: 100vh;
-    background-color: #f8f9fa;
+    background-color: var(--vx-beige);
 }
 
-/* Link activo en el menú */
+/* Logo redondo del sidebar */
+.sidebar-logo-text {
+    color: var(--vx-sage-dark);
+    font-size: 1.15rem;
+}
+
+.sidebar-logo-dot {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--vx-sage);
+    color: #fff;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    margin: 0.5rem auto;
+}
+
+.sidebar-header-collapsed {
+    padding-block: 0.25rem 0.5rem;
+}
+
+/* Links del menú: pills redondeadas al estilo de la referencia */
 .nav-link {
-    border-radius: 0.5rem;
-    margin: 0 0.25rem;
+    border-radius: var(--vx-radius-sm);
+    margin: 0.2rem 0.25rem;
+    padding: 0.6rem 0.85rem;
 }
 
 .nav-link.active {
-    background-color: #000000;
+    background-color: var(--vx-sage-darker);
     color: #fff !important;
+}
+
+.nav-link.active .sidebar-icon {
+    color: #fff;
+}
+
+.custom-link {
+    color: var(--vx-muted) !important;
+    text-decoration: none !important;
+}
+
+.custom-link:hover {
+    background-color: var(--vx-sage-softer);
+    color: var(--vx-sage-darker) !important;
+}
+
+.sidebar-icon {
+    color: var(--vx-muted);
+    font-size: 1.15rem;
+    width: 1.25rem;
+    text-align: center;
 }
 
 /* Botón de colapsar */
 .sidebar-toggle-btn {
-    border-radius: 15px;
-    border: solid 1px #e9e6e6;
-    background-color: #e9e6e6;
+    border-radius: 999px;
+    border: none;
+    background-color: var(--vx-sage-softer);
+    color: var(--vx-sage-dark);
+    width: 32px;
+    height: 32px;
 }
 
-.custom-link {
-    color: #000000 !important;
-    text-decoration: none !important;
+.sidebar-footer {
+    padding-top: 0.5rem;
 }
 
-/* Mantén la sidebar fija y el content-wrapper con margen (ya lo tenías) */
+.sidebar-logout-btn {
+    border-radius: var(--vx-radius-sm);
+}
 
-@media (min-width: 992px) {
-    /* Nueva clase para el encabezado de escritorio fijo */
-    .desktop-header {
-        position: fixed;
-        top: 0;
-        z-index: 1020;
-        height: 60px; /* Alto fijo para la Topbar */
-        background-color: #fff; /* Asegura el fondo blanco */
-        border-bottom: 1px solid #dee2e6;
-
-        /* Ajuste de ancho y posición basado en el sidebar */
-        width: calc(100% - 240px); /* Ancho: 100% menos ancho normal del sidebar */
-        margin-left: 240px;
-        transition:
-            width 0.3s ease,
-            margin-left 0.3s ease;
-    }
-
-    /* Ajuste para el estado colapsado */
-    .app-layout.sidebar-collapsed {
-        .content-wrapper {
-            margin-left: 72px;
-        }
-        .desktop-header {
-            width: calc(100% - 72px);
-            margin-left: 72px; /* Mueve la barra superior para que empiece después del sidebar colapsado */
-        }
-    }
-
-    /* 💥 Esencial: Margen superior al contenido principal para no quedar debajo del header fijo */
-    .main-container {
-        padding-top: 60px; /* Igual al alto del .desktop-header */
-    }
+.sidebar-copyright {
+    opacity: 0.7;
 }

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { crearClienteHandler, crearContratoHandler, getClientePorNitHandler, getClienteResumenHandler, getClientesHandler, getContratosHandler } from '../controllers/cliente.controller';
+import { crearContratoHandler, getContratosHandler } from '../controllers/cliente.controller';
 import { authJwt } from '../middlewares/authJwt';
 import { requireModule } from '../middlewares/requireModule';
 import { requirePermission } from '../middlewares/requirePermission';

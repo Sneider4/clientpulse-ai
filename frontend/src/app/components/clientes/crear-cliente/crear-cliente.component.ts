@@ -1,4 +1,5 @@
 import { Component, inject } from '@angular/core';
+import { NgClass } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ClienteService } from '../../../services/cliente.service';
 import { Cliente } from '../../../../models/vortex.model';
@@ -9,7 +10,7 @@ import Swal from 'sweetalert2';
 
 @Component({
     selector: 'app-crear-cliente',
-    imports: [ReactiveFormsModule, RouterLink],
+    imports: [ReactiveFormsModule, RouterLink, NgClass],
     templateUrl: './crear-cliente.component.html',
     styleUrl: './crear-cliente.component.scss'
 })

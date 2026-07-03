@@ -106,16 +106,68 @@ CREATE TABLE IF NOT EXISTS public.contratos (
 -- TICKETS
 -- ────────────────────────────────────────────
 
+-- ────────────────────────────────────────────
+-- SERVICIOS (catálogo propio del cliente: "sobre qué producto/área es el
+-- ticket". Deliberadamente separado de `contratos` — contratos es la
+-- relación comercial ClientPulse↔Cliente (precio, nivel de servicio) y
+-- nunca debe exponerse al usuario final; servicios solo tiene nombre.)
+-- ────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS public.servicios (
+    id_servicio SERIAL PRIMARY KEY,
+    id_cliente  INTEGER      NOT NULL REFERENCES public.clientes(id_cliente),
+    nombre      VARCHAR(150) NOT NULL,
+    estado      VARCHAR(20)  DEFAULT 'ACTIVO'
+);
+
+-- ────────────────────────────────────────────
+-- TICKETS
+-- ────────────────────────────────────────────
+
 CREATE TABLE IF NOT EXISTS public.tickets (
-    id_ticket      SERIAL PRIMARY KEY,
-    id_contrato    INTEGER      NOT NULL REFERENCES public.contratos(id_contrato),
-    titulo         VARCHAR(200) NOT NULL,
-    descripcion    TEXT         NOT NULL,
-    tipo           VARCHAR(20),
-    prioridad      VARCHAR(20),
-    estado         VARCHAR(20)  DEFAULT 'ENTREGADO',
-    fecha_creacion TIMESTAMP    NOT NULL DEFAULT NOW(),
-    fecha_cierre   TIMESTAMP
+    id_ticket          SERIAL PRIMARY KEY,
+    -- id_contrato queda nullable y solo por compatibilidad con tickets históricos;
+    -- los tickets nuevos usan id_cliente + id_servicio directamente.
+    id_contrato        INTEGER      REFERENCES public.contratos(id_contrato),
+    id_cliente         INTEGER      REFERENCES public.clientes(id_cliente),
+    id_servicio        INTEGER      REFERENCES public.servicios(id_servicio),
+    titulo             VARCHAR(200) NOT NULL,
+    descripcion        TEXT         NOT NULL,
+    tipo               VARCHAR(20),
+    prioridad          VARCHAR(20),
+    estado             VARCHAR(20)  DEFAULT 'ENTREGADO',
+    fecha_creacion     TIMESTAMP    NOT NULL DEFAULT NOW(),
+    fecha_cierre       TIMESTAMP,
+    -- Quién presentó el ticket (usuario final o personal de la empresa cliente).
+    -- Nullable: tickets antiguos no lo tienen; permite que un USUARIO_FINAL vea "sus" tickets.
+    id_usuario_creador  INTEGER      REFERENCES public.usuarios(id_usuario),
+    -- Quién de la empresa cliente (agente/supervisor) está gestionando el ticket.
+    id_agente_asignado  INTEGER      REFERENCES public.usuarios(id_usuario)
+);
+
+ALTER TABLE public.tickets
+    ADD COLUMN IF NOT EXISTS id_usuario_creador INTEGER REFERENCES public.usuarios(id_usuario);
+ALTER TABLE public.tickets
+    ADD COLUMN IF NOT EXISTS id_cliente INTEGER REFERENCES public.clientes(id_cliente);
+ALTER TABLE public.tickets
+    ADD COLUMN IF NOT EXISTS id_servicio INTEGER REFERENCES public.servicios(id_servicio);
+ALTER TABLE public.tickets
+    ADD COLUMN IF NOT EXISTS id_agente_asignado INTEGER REFERENCES public.usuarios(id_usuario);
+ALTER TABLE public.tickets
+    ALTER COLUMN id_contrato DROP NOT NULL;
+
+-- ────────────────────────────────────────────
+-- MENSAJES DE TICKET (conversación: respuestas visibles para el cliente +
+-- notas internas visibles solo para el staff de la empresa)
+-- ────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS public.ticket_mensajes (
+    id_mensaje        SERIAL PRIMARY KEY,
+    id_ticket         INTEGER      NOT NULL REFERENCES public.tickets(id_ticket),
+    id_usuario_autor  INTEGER      NOT NULL REFERENCES public.usuarios(id_usuario),
+    mensaje           TEXT         NOT NULL,
+    tipo              VARCHAR(20)  NOT NULL DEFAULT 'RESPUESTA', -- 'RESPUESTA' | 'NOTA_INTERNA'
+    fecha_creacion    TIMESTAMP    NOT NULL DEFAULT NOW()
 );
 
 -- ────────────────────────────────────────────

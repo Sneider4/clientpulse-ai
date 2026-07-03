@@ -1,14 +1,17 @@
 export interface CreateTicketDTO {
-    id_contrato: number;
+    id_cliente: number;
+    id_servicio: number | null;
     titulo: string;
     descripcion: string;
     tipo?: string | null;
     prioridad?: string | null;
+    id_usuario_creador: number | null;
 }
 
 export interface TicketRow {
     id_ticket: number;
-    id_contrato: number;
+    id_cliente: number | null;
+    id_servicio: number | null;
     titulo: string;
     descripcion: string;
     tipo: string | null;
@@ -16,6 +19,18 @@ export interface TicketRow {
     estado: string;
     fecha_creacion: Date;
     fecha_cierre: Date | null;
+    id_usuario_creador: number | null;
+    id_agente_asignado: number | null;
+    nombre_agente_asignado?: string | null;
+    nombre_servicio?: string | null;
+}
+
+export const ESTADOS_TICKET_ASIGNABLES = ['ENTREGADO', 'EN_PROCESO', 'CERRADO'] as const;
+export type EstadoTicketAsignable = typeof ESTADOS_TICKET_ASIGNABLES[number];
+
+export interface ListarTicketsFiltro {
+    idCliente: number | null;
+    idUsuarioCreador: number | null;
 }
 
 export interface AnalisisRow {
@@ -52,12 +67,9 @@ export interface TicketContextoCreacion {
         fecha_inicio_relacion: string | null;
         estado: string;
     };
-    contratos_activos: {
-        id_contrato: number;
-        nombre_proyecto: string;
-        fecha_inicio: string | null;
-        fecha_fin: string | null;
+    servicios_activos: {
+        id_servicio: number;
+        nombre: string;
         estado: string;
-        nivel_servicio: string | null;
     }[];
 }

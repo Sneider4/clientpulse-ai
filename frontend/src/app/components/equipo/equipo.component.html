@@ -1,0 +1,138 @@
+<div class="vx-container my-4">
+    <div class="mb-4">
+        <h1 class="mb-1 fw-bold">Mi equipo</h1>
+        <p class="text-muted mb-0">Invita a los usuarios finales de tu empresa para que puedan presentar y ver sus propios tickets.</p>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-5">
+            <div class="vx-card h-100">
+                <div class="card-body px-4 py-4">
+                    <h5 class="fw-semibold mb-3">Invitar usuario final</h5>
+
+                    <form [formGroup]="form" (ngSubmit)="invitarUsuario()">
+                        <div class="mb-3">
+                            <label for="nombre" class="form-label fw-semibold">Nombre</label>
+                            <input id="nombre" type="text" class="form-control" formControlName="nombre" />
+                            @if (hasError('nombre', 'required')) {
+                                <small class="text-danger">El nombre es obligatorio.</small>
+                            }
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="correo" class="form-label fw-semibold">Correo</label>
+                            <input id="correo" type="email" class="form-control" formControlName="correo" />
+                            @if (hasError('correo', 'required')) {
+                                <small class="text-danger">El correo es obligatorio.</small>
+                            }
+                            @if (hasError('correo', 'email')) {
+                                <small class="text-danger">Ingresa un correo válido.</small>
+                            }
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label fw-semibold">Contraseña temporal</label>
+                            <input id="password" type="text" class="form-control" formControlName="password" />
+                            @if (hasError('password', 'required')) {
+                                <small class="text-danger">La contraseña es obligatoria.</small>
+                            }
+                            @if (hasError('password', 'minlength')) {
+                                <small class="text-danger">Mínimo 4 caracteres.</small>
+                            }
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100" [disabled]="creando">
+                            {{ creando ? 'Invitando...' : 'Invitar usuario' }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="vx-card h-100">
+                <div class="card-body px-4 py-4">
+                    <h5 class="fw-semibold mb-3">Usuarios finales de tu empresa</h5>
+
+                    @if (loading) {
+                        <div class="alert alert-info mb-0">Cargando usuarios...</div>
+                    }
+                    @if (errorMessage) {
+                        <div class="alert alert-danger mb-0">{{ errorMessage }}</div>
+                    }
+                    @if (!loading && !errorMessage) {
+                        @if (usuarios.length > 0) {
+                            <div class="table-responsive">
+                                <table class="table vx-table table-hover align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Nombre</th>
+                                            <th>Correo</th>
+                                            <th class="text-center">Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @for (u of usuarios; track u.id_usuario) {
+                                            <tr>
+                                                <td>{{ u.nombre }}</td>
+                                                <td>{{ u.correo }}</td>
+                                                <td class="text-center">
+                                                    <span class="badge" [ngClass]="u.activo ? 'vx-badge-navy-2' : 'vx-badge-nd'">
+                                                        {{ u.activo ? 'Activo' : 'Inactivo' }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        } @else {
+                            <div class="alert alert-info mb-0">Aún no has invitado usuarios finales.</div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mt-1">
+        <div class="col-lg-5">
+            <div class="vx-card h-100">
+                <div class="card-body px-4 py-4">
+                    <h5 class="fw-semibold mb-1">Servicios de tu empresa</h5>
+                    <p class="text-muted small mb-3">Sobre qué producto o área pueden tus usuarios finales presentar una queja o solicitud (sin datos de facturación).</p>
+
+                    <form [formGroup]="formServicio" (ngSubmit)="crearServicio()" class="d-flex gap-2 mb-3">
+                        <input type="text" class="form-control" formControlName="nombre" placeholder="Ej. Sistema ERP, Soporte Cloud..." />
+                        <button type="submit" class="btn btn-primary text-nowrap" [disabled]="creandoServicio">
+                            {{ creandoServicio ? 'Creando...' : 'Agregar' }}
+                        </button>
+                    </form>
+
+                    @if (loadingServicios) {
+                        <div class="alert alert-info mb-0">Cargando servicios...</div>
+                    }
+                    @if (errorMessageServicios) {
+                        <div class="alert alert-danger mb-0">{{ errorMessageServicios }}</div>
+                    }
+                    @if (!loadingServicios && !errorMessageServicios) {
+                        @if (servicios.length > 0) {
+                            <ul class="list-group">
+                                @for (s of servicios; track s.id_servicio) {
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        {{ s.nombre }}
+                                        <button type="button" class="btn btn-sm" [ngClass]="s.estado === 'ACTIVO' ? 'btn-outline-secondary' : 'btn-outline-success'" (click)="toggleServicio(s)">
+                                            {{ s.estado === 'ACTIVO' ? 'Desactivar' : 'Activar' }}
+                                        </button>
+                                    </li>
+                                }
+                            </ul>
+                        } @else {
+                            <div class="alert alert-info mb-0">Aún no has creado servicios.</div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

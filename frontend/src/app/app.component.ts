@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from './services/auth/auth.service';
+import { GuiaComponent } from './components/guia/guia.component';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import Swal from 'sweetalert2';
 
@@ -16,15 +17,16 @@ type MenuItem = {
 
 @Component({
     selector: 'app-root',
-    imports: [RouterOutlet, RouterLinkActive, RouterLink, CommonModule],
+    imports: [RouterOutlet, RouterLinkActive, RouterLink, CommonModule, GuiaComponent],
     templateUrl: './app.component.html',
     styleUrl: './app.component.scss'
 })
 
 export class AppComponent {
     title = 'frontend';
-    isSidebarCollapsed = false;
+    isSidebarCollapsed = true;
     currentYear = new Date().getFullYear();
+    mostrarGuia = false;
 
     items: MenuItem[] = [
         { label: 'Dashboard',       icon: 'bi bi-speedometer2',  route: '/dashboard',      module: 'DASHBOARD',  permission: 'DASHBOARD_VER'  },
@@ -32,6 +34,7 @@ export class AppComponent {
         { label: 'Tickets',         icon: 'bi bi-list-check',    route: '/tickets',        module: 'TICKETS',    permission: 'TICKETS_VER'    },
         { label: 'Clientes',        icon: 'bi bi-people',        route: '/clientes/nuevo', module: 'CLIENTES',   permission: 'CLIENTES_VER'   },
         { label: 'Contratos',       icon: 'bi bi-journal-text',  route: '/contratos/nuevo',module: 'CONTRATOS',  permission: 'CONTRATOS_VER'  },
+        { label: 'Mi equipo',       icon: 'bi bi-person-plus',   route: '/equipo',         module: 'EQUIPO',     permission: 'USUARIOS_FINALES_GESTIONAR' },
         { label: 'Administración',  icon: 'bi bi-gear-fill',     route: '/admin',          adminOnly: true       },
     ];
 

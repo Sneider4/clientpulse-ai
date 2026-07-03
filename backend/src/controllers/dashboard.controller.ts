@@ -1,10 +1,13 @@
 // src/controllers/dashboard.controller.ts
 import { Request, Response } from 'express';
-import { getDashboardResumen } from '../services/dashboard.service';
+import { getDashboardResumenAdmin, getDashboardResumenCliente } from '../services/dashboard.service';
 
-export async function getDashboardResumenHandler(_req: Request, res: Response) {
+export async function getDashboardResumenHandler(req: Request, res: Response) {
     try {
-        const data = await getDashboardResumen();
+        const idCliente = req.user?.id_cliente ?? null;
+        const data = idCliente === null
+            ? await getDashboardResumenAdmin()
+            : await getDashboardResumenCliente(idCliente);
         return res.json(data);
     } catch (error) {
         console.error('Error obteniendo resumen de dashboard:', error);

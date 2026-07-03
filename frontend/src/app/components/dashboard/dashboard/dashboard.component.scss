@@ -1,0 +1,42 @@
+.vx-hero {
+    padding: 2rem 2.25rem;
+}
+
+@media (max-width: 575.98px) {
+    .vx-hero {
+        padding: 1.5rem;
+    }
+}
+
+.vx-label {
+    color: var(--vx-muted);
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+}
+
+.vx-label-light {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+}
+
+.vx-progress {
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+/* Contenedores de gráfica con altura fija: evita que Chart.js
+   crezca sin control al mantener aspect-ratio contra un card ancho. */
+.vx-chart {
+    position: relative;
+    height: 260px;
+}
+
+.vx-chart-lg {
+    position: relative;
+    height: 300px;
+}
+
+table thead {
+    background-color: var(--vx-sage-softer);
+}

@@ -1,6 +1,6 @@
 // src/controllers/cliente.controller.ts
 import { Request, Response } from 'express';
-import { getClienteResumen, getClientePorNitConContratosActivos, crearCliente, crearContrato, listarContratos, listarClientes } from '../services/cliente.service';
+import { getClienteResumen, crearCliente, crearContrato, listarContratos, listarClientes } from '../services/cliente.service';
 
 export async function crearClienteHandler(req: Request, res: Response) {
     try {
@@ -106,29 +106,6 @@ export async function getClienteResumenHandler(req: Request, res: Response) {
         console.error('Error obteniendo resumen de cliente:', error);
         return res.status(500).json({
             message: 'Error interno al obtener el resumen del cliente'
-        });
-    }
-}
-
-export async function getClientePorNitHandler(req: Request, res: Response) {
-    try {
-        const nit = req.params.nit;
-
-        if (!nit) {
-            return res.status(400).json({ message: 'NIT es requerido' });
-        }
-
-        const data = await getClientePorNitConContratosActivos(nit);
-
-        if (!data) {
-            return res.status(404).json({ message: 'Cliente no encontrado para ese NIT' });
-        }
-
-        return res.json(data);
-    } catch (error) {
-        console.error('Error obteniendo cliente por NIT:', error);
-        return res.status(500).json({
-            message: 'Error interno al buscar cliente por NIT'
         });
     }
 }

@@ -2,10 +2,36 @@
 //cSpell:disable
 import { pool } from '../db/pool';
 import { AnalisisIAResult } from '../models/ia.models';
-import { AnalisisRow, CreateTicketDTO, TicketRow, TicketWithAnalysis, TicketContextoCreacion } from '../models/ticket.model';
+import { AnalisisRow, CreateTicketDTO, TicketRow, TicketWithAnalysis, TicketContextoCreacion, ListarTicketsFiltro, ESTADOS_TICKET_ASIGNABLES, EstadoTicketAsignable } from '../models/ticket.model';
 import { analizarTextoTicketConIA } from './ia.service';
 import { preprocesarTextoTicket } from '../utils/text-security.util';
+import { userHasPermission } from '../middlewares/requirePermission';
+import { JwtUser } from '../middlewares/authJwt';
 
+/**
+ * Scoping compartido: ¿puede este usuario ver este ticket? Admin ve todo;
+ * un usuario de empresa solo ve tickets de su propia empresa, y si no tiene
+ * TICKETS_VER_TODOS, únicamente los que él mismo creó. Reutilizado por
+ * getDetalleTicketHandler y por el hilo de mensajes (mensaje.controller.ts).
+ */
+export async function puedeVerTicket(
+    user: JwtUser,
+    ticketData: { id_cliente: number | null; id_usuario_creador: number | null }
+): Promise<boolean> {
+    if (user.id_cliente === null) return true; // admin global
+    if (ticketData.id_cliente !== user.id_cliente) return false;
+    const puedeVerTodos = await userHasPermission(user, 'TICKETS_VER_TODOS');
+    if (puedeVerTodos) return true;
+    return ticketData.id_usuario_creador === user.id_usuario;
+}
+
+/**
+ * Contexto para crear un ticket: datos del cliente (empresa) y su catálogo de
+ * servicios propios. Deliberadamente NO incluye nada de `contratos` (precio,
+ * nivel de servicio) — eso es la relación comercial ClientPulse↔Cliente y
+ * nunca debe llegar a quien presenta el ticket (personal de la empresa o su
+ * usuario final).
+ */
 export async function obtenerContextoCreacionTicketPorCliente(
     idCliente: number
 ): Promise<TicketContextoCreacion | null> {
@@ -39,123 +65,50 @@ export async function obtenerContextoCreacionTicketPorCliente(
         estado: c.estado
     };
 
-    const contratosQuery = `
-        SELECT
-            id_contrato,
-            nombre_proyecto,
-            fecha_inicio,
-            fecha_fin,
-            estado,
-            nivel_servicio
-        FROM contratos
+    const serviciosQuery = `
+        SELECT id_servicio, nombre, estado
+        FROM servicios
         WHERE id_cliente = $1
-          AND estado = 'VIGENTE'
-        ORDER BY fecha_inicio DESC
+          AND estado = 'ACTIVO'
+        ORDER BY nombre
     `;
 
-    const contratosResult = await pool.query(contratosQuery, [idCliente]);
+    const serviciosResult = await pool.query(serviciosQuery, [idCliente]);
 
-    const contratos_activos = contratosResult.rows.map((row: any) => ({
-        id_contrato: row.id_contrato,
-        nombre_proyecto: row.nombre_proyecto,
-        fecha_inicio: row.fecha_inicio,
-        fecha_fin: row.fecha_fin,
-        estado: row.estado,
-        nivel_servicio: row.nivel_servicio
+    const servicios_activos = serviciosResult.rows.map((row: any) => ({
+        id_servicio: row.id_servicio,
+        nombre: row.nombre,
+        estado: row.estado
     }));
 
     return {
         cliente,
-        contratos_activos
+        servicios_activos
     };
 }
 
-export async function obtenerContextoCreacionTicketPorNit(
-    nit: string
-): Promise<TicketContextoCreacion | null> {
-    const clienteQuery = `
-        SELECT
-            id_cliente,
-            nombre,
-            nit,
-            sector,
-            fecha_inicio_relacion,
-            estado
-        FROM clientes
-        WHERE nit = $1
-        LIMIT 1
-    `;
-
-    const clienteResult = await pool.query(clienteQuery, [nit]);
-
-    if (clienteResult.rowCount === 0) {
-        return null;
-    }
-
-    const c = clienteResult.rows[0];
-
-    const cliente = {
-        id_cliente: c.id_cliente,
-        nombre: c.nombre,
-        nit: c.nit,
-        sector: c.sector,
-        fecha_inicio_relacion: c.fecha_inicio_relacion,
-        estado: c.estado
-    };
-
-    const contratosQuery = `
-        SELECT
-            id_contrato,
-            nombre_proyecto,
-            fecha_inicio,
-            fecha_fin,
-            estado,
-            nivel_servicio
-        FROM contratos
-        WHERE id_cliente = $1
-          AND estado = 'VIGENTE'
-        ORDER BY fecha_inicio DESC
-    `;
-
-    const contratosResult = await pool.query(contratosQuery, [cliente.id_cliente]);
-
-    const contratos_activos = contratosResult.rows.map((row: any) => ({
-        id_contrato: row.id_contrato,
-        nombre_proyecto: row.nombre_proyecto,
-        fecha_inicio: row.fecha_inicio,
-        fecha_fin: row.fecha_fin,
-        estado: row.estado,
-        nivel_servicio: row.nivel_servicio
-    }));
-
-    return {
-        cliente,
-        contratos_activos
-    };
-}
-
-export async function validarContratoPerteneceACliente(
-    idContrato: number,
+export async function validarServicioPerteneceACliente(
+    idServicio: number,
     idCliente: number
 ): Promise<boolean> {
     const query = `
         SELECT 1
-        FROM contratos
-        WHERE id_contrato = $1
+        FROM servicios
+        WHERE id_servicio = $1
           AND id_cliente = $2
         LIMIT 1
     `;
 
-    const result = await pool.query(query, [idContrato, idCliente]);
+    const result = await pool.query(query, [idServicio, idCliente]);
     return (result.rowCount ?? 0) > 0;
 }
-
 
 export async function obtenerDetalleTicket(idTicket: number): Promise<any | null> {
     const query = `
         SELECT
             t.id_ticket,
-            t.id_contrato,
+            t.id_cliente,
+            t.id_servicio,
             t.titulo,
             t.descripcion,
             t.tipo,
@@ -163,6 +116,8 @@ export async function obtenerDetalleTicket(idTicket: number): Promise<any | null
             t.estado,
             t.fecha_creacion,
             t.fecha_cierre,
+            t.id_usuario_creador,
+            t.id_agente_asignado,
 
             a.id_analisis,
             a.sentimiento,
@@ -173,24 +128,100 @@ export async function obtenerDetalleTicket(idTicket: number): Promise<any | null
             a.fecha_analisis,
             a.score_churn,
             a.riesgo_churn,
-            
-            c.nombre_proyecto as nombre_contrato,
+
+            s.nombre as nombre_servicio,
             cli.nombre as nombre_cliente,
-            cli.nit as nit_cliente
+            cli.nit as nit_cliente,
+            ag.nombre as nombre_agente_asignado
 
         FROM tickets t
         LEFT JOIN analisis_ticket a
         ON a.id_ticket = t.id_ticket
-        LEFT JOIN contratos c
-        ON t.id_contrato = c.id_contrato
+        LEFT JOIN servicios s
+        ON t.id_servicio = s.id_servicio
         LEFT JOIN clientes cli
-        ON c.id_cliente = cli.id_cliente
+        ON t.id_cliente = cli.id_cliente
+        LEFT JOIN usuarios ag
+        ON t.id_agente_asignado = ag.id_usuario
         WHERE t.id_ticket = $1;
     `;
 
     const result = await pool.query<any>(query, [idTicket]);
-    console.log(result);
     return result.rows[0] ?? null;
+}
+
+/**
+ * Agentes/supervisores activos de una empresa, para poblar el selector de
+ * "asignar a" — mismo molde que listarUsuariosFinalesPorCliente en admin.service.ts.
+ */
+export async function listarAgentesPorCliente(idCliente: number) {
+    const { rows } = await pool.query(`
+        SELECT u.id_usuario, u.nombre, u.correo
+        FROM usuarios u
+        JOIN roles r ON r.id_rol = u.id_rol
+        WHERE u.id_cliente = $1
+          AND r.codigo IN ('AGENTE', 'SUPERVISOR')
+          AND u.activo = TRUE
+        ORDER BY u.nombre
+    `, [idCliente]);
+    return rows;
+}
+
+async function validarTicketPerteneceACliente(idTicket: number, idCliente: number): Promise<boolean> {
+    const { rowCount } = await pool.query(
+        `SELECT 1 FROM tickets WHERE id_ticket = $1 AND id_cliente = $2 LIMIT 1`,
+        [idTicket, idCliente]
+    );
+    return (rowCount ?? 0) > 0;
+}
+
+export async function asignarTicket(idTicket: number, idAgente: number, idClienteContexto: number): Promise<TicketRow> {
+    const ticketValido = await validarTicketPerteneceACliente(idTicket, idClienteContexto);
+    if (!ticketValido) {
+        throw new Error('El ticket no pertenece a esa empresa');
+    }
+
+    const { rows: agenteRows } = await pool.query(
+        `SELECT 1 FROM usuarios u JOIN roles r ON r.id_rol = u.id_rol
+         WHERE u.id_usuario = $1 AND u.id_cliente = $2 AND r.codigo IN ('AGENTE','SUPERVISOR') LIMIT 1`,
+        [idAgente, idClienteContexto]
+    );
+    if (agenteRows.length === 0) {
+        throw new Error('El agente indicado no pertenece a esa empresa');
+    }
+
+    const { rows } = await pool.query<TicketRow>(
+        `UPDATE tickets SET id_agente_asignado = $1 WHERE id_ticket = $2 RETURNING *`,
+        [idAgente, idTicket]
+    );
+    return rows[0];
+}
+
+export async function actualizarEstadoTicket(
+    idTicket: number,
+    nuevoEstado: EstadoTicketAsignable,
+    idClienteContexto: number
+): Promise<TicketRow> {
+    if (!ESTADOS_TICKET_ASIGNABLES.includes(nuevoEstado)) {
+        // BLOQUEADO_POR_SEGURIDAD u otro valor no permitido manualmente:
+        // ese estado lo asigna únicamente el sistema al detectar phishing.
+        throw new Error('Estado no permitido');
+    }
+
+    const ticketValido = await validarTicketPerteneceACliente(idTicket, idClienteContexto);
+    if (!ticketValido) {
+        throw new Error('El ticket no pertenece a esa empresa');
+    }
+
+    const { rows } = await pool.query<TicketRow>(
+        `UPDATE tickets
+         SET estado = $1::varchar,
+             fecha_cierre = CASE WHEN $1::varchar = 'CERRADO' THEN NOW() ELSE NULL END
+         WHERE id_ticket = $2
+         RETURNING *`,
+        [nuevoEstado, idTicket]
+    );
+    return rows[0];
 }
 
 export async function createTicketWithAnalysis(data: CreateTicketDTO): Promise<{
@@ -212,29 +243,26 @@ export async function createTicketWithAnalysis(data: CreateTicketDTO): Promise<{
     try {
         await client.query('BEGIN');
 
+        // total_contratos es una señal interna para el análisis de IA (tamaño de
+        // la relación comercial), no se expone nunca al frontend del ticket.
         const clienteInfoQuery = `
             SELECT
-                c.id_cliente,
+                cli.id_cliente,
                 cli.nombre,
                 cli.fecha_inicio_relacion,
-                (
-                SELECT COUNT(*)
-                FROM contratos c2
-                WHERE c2.id_cliente = c.id_cliente
-                ) AS total_contratos
-            FROM contratos c
-            INNER JOIN clientes cli ON cli.id_cliente = c.id_cliente
-            WHERE c.id_contrato = $1
+                (SELECT COUNT(*) FROM contratos c2 WHERE c2.id_cliente = cli.id_cliente) AS total_contratos
+            FROM clientes cli
+            WHERE cli.id_cliente = $1
             LIMIT 1
         `;
 
         const clienteInfoResult = await client.query(clienteInfoQuery, [
-            data.id_contrato
+            data.id_cliente
         ]);
 
         if (clienteInfoResult.rows.length === 0) {
             throw new Error(
-                `No se encontró cliente asociado al contrato ${data.id_contrato}`
+                `No se encontró el cliente ${data.id_cliente}`
             );
         }
 
@@ -252,19 +280,23 @@ export async function createTicketWithAnalysis(data: CreateTicketDTO): Promise<{
 
         const insertTicketQuery = `
             INSERT INTO tickets (
-                id_contrato,
+                id_cliente,
+                id_servicio,
                 titulo,
                 descripcion,
-                estado
-            ) VALUES ($1, $2, $3, $4)
+                estado,
+                id_usuario_creador
+            ) VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING *
         `;
 
         const ticketResult = await client.query<TicketRow>(insertTicketQuery, [
-            data.id_contrato,
+            data.id_cliente,
+            data.id_servicio,
             data.titulo,
             data.descripcion,
-            estadoInicial
+            estadoInicial,
+            data.id_usuario_creador
         ]);
 
         const ticket = ticketResult.rows[0];
@@ -352,11 +384,25 @@ export async function createTicketWithAnalysis(data: CreateTicketDTO): Promise<{
 }
 
 
-export async function listTicketsWithAnalysis(): Promise<TicketWithAnalysis[]> {
+export async function listTicketsWithAnalysis(filtro: ListarTicketsFiltro): Promise<TicketWithAnalysis[]> {
+    const params: any[] = [];
+    const condiciones: string[] = [];
+
+    if (filtro.idCliente !== null) {
+        params.push(filtro.idCliente);
+        condiciones.push(`t.id_cliente = $${params.length}`);
+    }
+    if (filtro.idUsuarioCreador !== null) {
+        params.push(filtro.idUsuarioCreador);
+        condiciones.push(`t.id_usuario_creador = $${params.length}`);
+    }
+    const whereClause = condiciones.length > 0 ? `WHERE ${condiciones.join(' AND ')}` : '';
+
     const query = `
-        SELECT 
+        SELECT
             t.id_ticket,
-            t.id_contrato,
+            t.id_cliente,
+            t.id_servicio,
             t.titulo,
             t.descripcion,
             t.tipo,
@@ -364,6 +410,10 @@ export async function listTicketsWithAnalysis(): Promise<TicketWithAnalysis[]> {
             t.estado,
             t.fecha_creacion,
             t.fecha_cierre,
+            t.id_usuario_creador,
+            t.id_agente_asignado,
+            ag.nombre as nombre_agente_asignado,
+            sv.nombre as nombre_servicio,
 
             a.id_analisis,
             a.sentimiento,
@@ -376,10 +426,13 @@ export async function listTicketsWithAnalysis(): Promise<TicketWithAnalysis[]> {
             a.fecha_analisis
         FROM tickets t
         LEFT JOIN analisis_ticket a ON a.id_ticket = t.id_ticket
+        LEFT JOIN usuarios ag ON ag.id_usuario = t.id_agente_asignado
+        LEFT JOIN servicios sv ON sv.id_servicio = t.id_servicio
+        ${whereClause}
         ORDER BY t.fecha_creacion DESC
     `;
 
-    const result = await pool.query(query);
+    const result = await pool.query(query, params);
 
     const items: TicketWithAnalysis[] = result.rows.map((row: any) => {
         // 🔹 1. Enmascarar descripción ANTES de enviarla al frontend
@@ -387,7 +440,8 @@ export async function listTicketsWithAnalysis(): Promise<TicketWithAnalysis[]> {
 
         const ticket: TicketRow = {
             id_ticket: row.id_ticket,
-            id_contrato: row.id_contrato,
+            id_cliente: row.id_cliente,
+            id_servicio: row.id_servicio,
             titulo: row.titulo,
             // el frontend SIEMPRE recibe la versión anonimizadaa
             descripcion: pre.textoAnonimizado,
@@ -395,7 +449,11 @@ export async function listTicketsWithAnalysis(): Promise<TicketWithAnalysis[]> {
             prioridad: row.prioridad,
             estado: row.estado,
             fecha_creacion: row.fecha_creacion,
-            fecha_cierre: row.fecha_cierre
+            fecha_cierre: row.fecha_cierre,
+            id_usuario_creador: row.id_usuario_creador,
+            id_agente_asignado: row.id_agente_asignado,
+            nombre_agente_asignado: row.nombre_agente_asignado,
+            nombre_servicio: row.nombre_servicio
         };
 
         let analisis: AnalisisRow | null = null;

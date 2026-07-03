@@ -1,4 +1,5 @@
 import { Component, inject } from '@angular/core';
+import { DecimalPipe, NgClass } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ClienteService } from '../../../services/cliente.service';
 import { Cliente, Contrato } from '../../../../models/vortex.model';
@@ -6,10 +7,11 @@ import { catchError, Subscription, tap } from 'rxjs';
 import Swal from 'sweetalert2';
 import moment from 'moment';
 import { ContratoService } from '../../../services/contrato.service';
+import { RouterLink } from '@angular/router';
 
 @Component({
     selector: 'app-crear-contrato',
-    imports: [ReactiveFormsModule],
+    imports: [ReactiveFormsModule, RouterLink, DecimalPipe, NgClass],
     templateUrl: './crear-contrato.component.html',
     styleUrl: './crear-contrato.component.scss'
 })
@@ -133,6 +135,7 @@ export class CrearContratoComponent {
     }
 
     formateadorFecha(fecha: string | null) {
+        if (!fecha) return '';
         moment.locale('es');
         return moment(fecha).format('dddd, DD [de] MMMM YYYY');
     }

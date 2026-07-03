@@ -34,6 +34,7 @@ export interface ClienteResumen {
         riesgo_churn: string | null;
         es_potencial_phishing: boolean;
         tiene_datos_sensibles: boolean;
+        nombre_servicio: string | null;
     }[];
 }
 
@@ -44,25 +45,6 @@ export interface Cliente {
     sector: string | null;
     fecha_inicio_relacion: string;
     estado: string;
-}
-
-export interface ClienteConContratosActivos {
-    cliente: {
-        id_cliente: number;
-        nombre: string;
-        nit: string | null;
-        sector: string | null;
-        fecha_inicio_relacion: string | null;
-        estado: string;
-    };
-    contratos_activos: {
-        id_contrato: number;
-        nombre_proyecto: string;
-        fecha_inicio: string | null;
-        fecha_fin: string | null;
-        estado: string;
-        nivel_servicio: string | null;
-    }[];
 }
 
 export interface ContratoInput {
@@ -78,6 +60,7 @@ export interface ContratoInput {
 export interface Contrato {
     id_contrato: number;
     id_cliente: number;
+    nombre_cliente?: string;
     nombre_proyecto: string;
     fecha_inicio: string;
     fecha_fin: string | null;

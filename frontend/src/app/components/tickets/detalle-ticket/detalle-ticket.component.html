@@ -1,4 +1,4 @@
-<div class="container my-4">
+<div class="vx-container my-4">
     <!-- Mensajes de estado -->
     @if (loading) {
         <div class="alert alert-info">Cargando detalle del ticket...</div>
@@ -13,20 +13,23 @@
     @if (!loading && !errorMessage && data) {
         <!-- Cabecera -->
         <div class="mb-3 d-flex justify-content-between align-items-center">
-            <div>
-                <h1 class="fw-bold mb-1">Ticket #{{ data.id_ticket }}</h1>
-                <p class="text-muted mb-0">Detalle del incidente reportado por el cliente.</p>
+            <div class="d-flex align-items-center gap-3">
+                <div class="vx-tile-icon"><i class="bi bi-ticket-detailed"></i></div>
+                <div>
+                    <h1 class="fw-bold mb-1">Ticket #{{ data.id_ticket }}</h1>
+                    <p class="text-muted mb-0">Detalle del incidente reportado por el cliente.</p>
+                </div>
             </div>
 
             <div class="text-end">
                 <div class="mb-1 d-flex flex-wrap gap-2 justify-content-end">
                     @if (data.tipo) {
-                        <span class="badge text-bg-dark">Tipo: {{ data.tipo }}</span>
+                        <span class="badge vx-badge-navy-2">Tipo: {{ data.tipo }}</span>
                     }
 
                     <span class="badge" [ngClass]="getPrioridadClass(data.prioridad)">Prioridad: {{ data.prioridad || "N/D" }}</span>
 
-                    <span class="badge text-bg-info">Estado: {{ data.estado || "N/D" }}</span>
+                    <span class="badge vx-badge-navy-3">Estado: {{ data.estado || "N/D" }}</span>
                 </div>
 
                 <small class="text-muted d-block">Creado: {{ formateadorFecha(data.fecha_creacion) }}</small>
@@ -41,7 +44,7 @@
         <div class="row g-3">
             <!-- Columna izquierda: detalle del ticket -->
             <div class="col-lg-6">
-                <div class="card rounded-4 shadow-sm h-100">
+                <div class="vx-card h-100">
                     <div class="card-body px-4">
                         <h2 class="h5 fw-semibold mb-3">Información del ticket</h2>
 
@@ -52,8 +55,11 @@
                             <dt class="col-sm-4">Cliente</dt>
                             <dd class="col-sm-8">{{ data.nit_cliente }} - {{ data.nombre_cliente }}</dd>
 
-                            <dt class="col-sm-4">Contrato</dt>
-                            <dd class="col-sm-8">{{ data.id_contrato }} - {{ data.nombre_contrato }}</dd>
+                            <dt class="col-sm-4">Servicio</dt>
+                            <dd class="col-sm-8">{{ data.nombre_servicio || "Sin especificar" }}</dd>
+
+                            <dt class="col-sm-4">Asignado a</dt>
+                            <dd class="col-sm-8">{{ data.nombre_agente_asignado || "Sin asignar" }}</dd>
 
                             <dt class="col-sm-4">Título</dt>
                             <dd class="col-sm-8">
@@ -63,7 +69,7 @@
                             @if (data.tipo) {
                                 <dt class="col-sm-4">Tipo</dt>
                                 <dd class="col-sm-8">
-                                    <span class="badge text-bg-secondary">
+                                    <span class="badge vx-badge-navy-2">
                                         {{ data.tipo }}
                                     </span>
                                 </dd>
@@ -89,7 +95,7 @@
 
             <!-- Columna derecha: análisis y riesgo -->
             <div class="col-lg-6">
-                <div class="card rounded-4 shadow-sm h-100">
+                <div class="vx-card h-100">
                     <div class="card-body px-4">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h2 class="h5 fw-semibold mb-0">Análisis de riesgo y sentimiento</h2>
@@ -107,11 +113,11 @@
                                 <span class="badge" [ngClass]="getRiesgoClass(data.riesgo_churn)">Riesgo churn: {{ data.riesgo_churn || "N/D" }}</span>
 
                                 @if (data.score_churn != null) {
-                                    <span class="badge text-bg-dark">Score churn: {{ data.score_churn }}/100</span>
+                                    <span class="badge vx-badge-navy-3">Score churn: {{ data.score_churn }}/100</span>
                                 }
 
                                 @if (data.frustracion) {
-                                    <span class="badge" [ngClass]="data.frustracion === 'ALTA' ? 'text-bg-danger' : data.frustracion === 'MEDIA' ? 'text-bg-warning text-dark' : 'text-bg-secondary'">Frustración: {{ data.frustracion }}</span>
+                                    <span class="badge" [ngClass]="data.frustracion === 'ALTA' ? 'vx-badge-crit' : data.frustracion === 'MEDIA' ? 'vx-badge-warn' : 'vx-badge-nd'">Frustración: {{ data.frustracion }}</span>
                                 }
                             </div>
                         </div>
@@ -141,6 +147,93 @@
                             <p class="mb-0">
                                 {{ data.recomendaciones || "Sin recomendaciones registradas." }}
                             </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gestión: asignar y cambiar estado (solo con TICKETS_GESTIONAR) -->
+        @if (auth.can('TICKETS', 'TICKETS_GESTIONAR')) {
+            <div class="row g-3 mt-1">
+                <div class="col-12">
+                    <div class="vx-card">
+                        <div class="card-body px-4">
+                            <h2 class="h5 fw-semibold mb-3">Gestionar ticket</h2>
+                            <div class="row g-3 align-items-end">
+                                <div class="col-md-5">
+                                    <label class="form-label fw-semibold">Asignar a</label>
+                                    <select class="form-select" [disabled]="gestionando" (change)="asignar($any($event.target).value)">
+                                        <option value="">Selecciona un agente...</option>
+                                        @for (a of agentesDisponibles; track a.id_usuario) {
+                                            <option [value]="a.id_usuario" [selected]="a.id_usuario === data.id_agente_asignado">{{ a.nombre }}</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col-md-7">
+                                    <label class="form-label fw-semibold d-block">Estado</label>
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-outline-secondary" [disabled]="gestionando" (click)="cambiarEstado('ENTREGADO')">Entregado</button>
+                                        <button type="button" class="btn btn-outline-primary" [disabled]="gestionando" (click)="cambiarEstado('EN_PROCESO')">En proceso</button>
+                                        <button type="button" class="btn btn-outline-success" [disabled]="gestionando" (click)="cambiarEstado('CERRADO')">Cerrado</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Conversación: respuestas visibles para el cliente + notas internas (staff) -->
+        <div class="row g-3 mt-1">
+            <div class="col-12">
+                <div class="card rounded-4 shadow-sm">
+                    <div class="card-body px-4">
+                        <h2 class="h5 fw-semibold mb-3">Conversación</h2>
+
+                        @if (loadingMensajes) {
+                            <div class="alert alert-info mb-3">Cargando conversación...</div>
+                        }
+
+                        @if (!loadingMensajes) {
+                            @if (mensajes.length > 0) {
+                                <div class="d-flex flex-column gap-2 mb-3" style="max-height: 420px; overflow-y: auto">
+                                    @for (m of mensajes; track m.id_mensaje) {
+                                        <div class="p-3 rounded-3" [ngClass]="m.tipo === 'NOTA_INTERNA' ? 'vx-nota-interna' : 'bg-light'">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <strong>{{ m.nombre_autor }}</strong>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    @if (m.tipo === 'NOTA_INTERNA') {
+                                                        <span class="badge vx-badge-warn">Nota interna</span>
+                                                    }
+                                                    <small class="text-muted">{{ formateadorFecha(m.fecha_creacion) }}</small>
+                                                </div>
+                                            </div>
+                                            <p class="mb-0" style="white-space: pre-line">{{ m.mensaje }}</p>
+                                        </div>
+                                    }
+                                </div>
+                            } @else {
+                                <div class="alert alert-secondary mb-3">Todavía no hay mensajes en este ticket.</div>
+                            }
+                        }
+
+                        <div class="border-top pt-3">
+                            <textarea class="form-control mb-2" rows="3" placeholder="Escribe una respuesta..." [(ngModel)]="nuevoMensajeTexto" [disabled]="enviandoMensaje"></textarea>
+                            <div class="d-flex justify-content-between align-items-center">
+                                @if (auth.can('TICKETS', 'TICKETS_GESTIONAR')) {
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="notaInterna" [(ngModel)]="nuevoMensajeEsNotaInterna" [disabled]="enviandoMensaje" />
+                                        <label class="form-check-label" for="notaInterna">Nota interna (tu equipo la ve, el cliente no)</label>
+                                    </div>
+                                } @else {
+                                    <span></span>
+                                }
+                                <button type="button" class="btn btn-primary" [disabled]="enviandoMensaje || !nuevoMensajeTexto.trim()" (click)="enviarMensaje()">
+                                    {{ enviandoMensaje ? "Enviando..." : "Enviar" }}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

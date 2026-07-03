@@ -1,9 +1,4 @@
-<div class="container my-4">
-    <div class="mb-4">
-        <h1 class="mb-1 fw-bold">Dashboard de Tickets y Soporte</h1>
-        <p class="text-muted mb-0">Visión general del riesgo de las solicitudes, el riesgo de churn y la satisfacción de los clientes.</p>
-    </div>
-
+<div class="vx-container my-4">
     @if (loading) {
         <div class="alert alert-info">Cargando dashboard...</div>
     }
@@ -13,137 +8,250 @@
         </div>
     }
     @if (!loading && data) {
-        <!-- Tarjetas resumen -->
-        <div class="row g-3 mb-4">
-            <div class="col-md-4">
-                <div class="card rounded-4 shadow-sm h-100">
-                    <div class="card-body px-4">
-                        <h3 class="h6 text-uppercase text-muted mb-1">Total de tickets</h3>
-                        <p class="display-6 fw-semibold mb-1">{{ data.total_tickets }}</p>
-                        <p class="text-muted mb-0">Tickets registrados en el sistema.</p>
+        <!-- Hero de bienvenida -->
+        <div class="vx-card-accent vx-hero mb-4 d-flex flex-wrap justify-content-between align-items-center gap-4">
+            <div>
+                <p class="vx-label-light mb-1 text-capitalize">{{ todayLabel }}</p>
+                <h2 class="fw-bold mb-1">{{ saludo }}, {{ userName }} <span aria-hidden="true">👋</span></h2>
+                <p class="mb-0 opacity-85">{{ heroSubtitle }}</p>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <a routerLink="/nuevo-ticket" class="btn btn-light fw-semibold">
+                    <i class="bi bi-plus-circle me-1"></i>Nuevo ticket
+                </a>
+                <a routerLink="/tickets" class="btn btn-outline-light fw-semibold">
+                    <i class="bi bi-list-check me-1"></i>Ver tickets
+                </a>
+            </div>
+        </div>
+
+        <!-- Fila 1: KPIs principales -->
+        <div class="row g-3 mb-3">
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="vx-card h-100">
+                    <div class="card-body px-4 py-4 d-flex align-items-start gap-3">
+                        <div class="vx-tile-icon"><i class="bi bi-ticket-detailed"></i></div>
+                        <div>
+                            <h3 class="h6 text-uppercase vx-label mb-2">Total de tickets</h3>
+                            <p class="display-6 fw-semibold mb-1">{{ data.total_tickets }}</p>
+                            <p class="text-muted small mb-0">Registrados en el sistema.</p>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-4">
-                <div class="card rounded-4 shadow-sm h-100">
-                    <div class="card-body px-4">
-                        <h3 class="h6 text-uppercase text-muted mb-1">Clientes con tickets</h3>
-                        <p class="display-6 fw-semibold mb-1">
-                            {{ data.total_clientes_con_tickets }}
-                        </p>
-                        <p class="text-muted mb-0">Clientes activos con interacción de soporte.</p>
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="vx-card h-100">
+                    <div class="card-body px-4 py-4 d-flex align-items-start gap-3">
+                        <div class="vx-tile-icon"><i class="bi bi-people"></i></div>
+                        @if (data.contexto === 'ADMIN') {
+                            <div>
+                                <h3 class="h6 text-uppercase vx-label mb-2">Clientes con tickets</h3>
+                                <p class="display-6 fw-semibold mb-1">{{ data.total_clientes_con_tickets }}</p>
+                                <p class="text-muted small mb-0">Con interacción de soporte.</p>
+                            </div>
+                        } @else {
+                            <div>
+                                <h3 class="h6 text-uppercase vx-label mb-2">Tickets abiertos</h3>
+                                <p class="display-6 fw-semibold mb-1">{{ ticketsAbiertos }}</p>
+                                <p class="text-muted small mb-0">Aún no cerrados.</p>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
 
-            <!-- Score global de churn -->
-            <div class="col-md-4">
-                <div class="card rounded-4 shadow-sm h-100">
-                    <div class="card-body px-4">
-                        <h3 class="h6 text-uppercase text-muted mb-1">Score global de churn</h3>
-                        <p class="display-6 fw-semibold mb-1">{{ churnScoreGlobal }} / 100</p>
-                        <p class="mb-0">
-                            Nivel actual:
-                            <span class="badge ms-1" [ngClass]="churnScoreBadgeClass">
-                                {{ churnScoreNivel }}
-                            </span>
-                        </p>
-                        <p class="text-muted small mb-0 mt-2">Promedio del riesgo de que los clientes abandonen la empresa, según todos los tickets analizados.</p>
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="vx-card h-100 vx-card-warn">
+                    <div class="card-body px-4 py-4 d-flex align-items-start gap-3">
+                        <div class="vx-tile-icon"><i class="bi bi-shield-exclamation"></i></div>
+                        <div>
+                            <h3 class="h6 text-uppercase vx-label mb-2">Alertas de seguridad</h3>
+                            <p class="display-6 fw-semibold mb-1">{{ totalAlertasSeguridad }}</p>
+                            <p class="text-muted small mb-0">
+                                {{ data.alertas_seguridad.phishing }} phishing · {{ data.alertas_seguridad.datos_sensibles }} datos sensibles
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="vx-card-accent h-100">
+                    <div class="card-body px-4 py-4 d-flex align-items-start gap-3">
+                        <div class="vx-tile-icon vx-tile-icon-light"><i class="bi bi-graph-up-arrow"></i></div>
+                        <div>
+                            <h3 class="h6 text-uppercase mb-2 vx-label-light">Score global de churn</h3>
+                            <p class="display-6 fw-semibold mb-1">{{ churnScoreGlobal }} / 100</p>
+                            <span class="badge ms-0" [ngClass]="churnScoreBadgeClass">{{ churnScoreNivel }}</span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Gráficas riesgo y satisfacción -->
-        <div class="row g-3 mb-5">
-            <!-- Riesgo de churn -->
-            <div class="col-lg-6">
-                <div class="card rounded-4 shadow-sm h-100">
-                    <div class="card-body px-4">
-                        <h4 class="fw-semibold mb-3">Distribución de riesgo de churn</h4>
-                        <p class="text-muted small mb-3">Proporción de tickets clasificados como ALTO, MEDIO, BAJO o sin dato (N/D).</p>
-                        <div class="d-flex justify-content-center">
-                            <canvas #riesgoChart height="220"></canvas>
+        <!-- Fila 1.5: negocio (solo admin) -->
+        @if (data.negocio) {
+            <div class="row g-3 mb-3">
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="vx-card h-100">
+                        <div class="card-body px-4 py-4 d-flex align-items-start gap-3">
+                            <div class="vx-tile-icon"><i class="bi bi-building"></i></div>
+                            <div>
+                                <h3 class="h6 text-uppercase vx-label mb-2">Clientes</h3>
+                                <p class="display-6 fw-semibold mb-1">{{ data.negocio.clientes_activos }}</p>
+                                <p class="text-muted small mb-0">de {{ data.negocio.total_clientes }} en total activos.</p>
+                            </div>
                         </div>
-                        <div class="mt-3">
-                            <ul class="list-unstyled small mb-0">
-                                <li>
-                                    <span class="badge text-bg-danger me-1">ALTO</span>
-                                    {{ getCantidadPorRiesgo("ALTO") }} tickets
-                                </li>
-                                <li>
-                                    <span class="badge text-bg-warning me-1">MEDIO</span>
-                                    {{ getCantidadPorRiesgo("MEDIO") }} tickets
-                                </li>
-                                <li>
-                                    <span class="badge text-bg-success me-1">BAJO</span>
-                                    {{ getCantidadPorRiesgo("BAJO") }} tickets
-                                </li>
-                                <li>
-                                    <span class="badge text-bg-secondary me-1">N/D</span>
-                                    {{ getCantidadPorRiesgo("N/D") }} tickets
-                                </li>
-                            </ul>
+                    </div>
+                </div>
+
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="vx-card h-100">
+                        <div class="card-body px-4 py-4 d-flex align-items-start gap-3">
+                            <div class="vx-tile-icon"><i class="bi bi-journal-text"></i></div>
+                            <div>
+                                <h3 class="h6 text-uppercase vx-label mb-2">Contratos vigentes</h3>
+                                <p class="display-6 fw-semibold mb-1">{{ data.negocio.contratos_activos }}</p>
+                                <p class="text-muted small mb-0">Contratos actualmente activos.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="vx-card h-100" [class.vx-card-warn]="data.negocio.contratos_por_vencer > 0">
+                        <div class="card-body px-4 py-4 d-flex align-items-start gap-3">
+                            <div class="vx-tile-icon"><i class="bi bi-hourglass-split"></i></div>
+                            <div>
+                                <h3 class="h6 text-uppercase vx-label mb-2">Por vencer</h3>
+                                <p class="display-6 fw-semibold mb-1">{{ data.negocio.contratos_por_vencer }}</p>
+                                <p class="text-muted small mb-0">Contratos que vencen en 30 días.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="vx-card-accent h-100">
+                        <div class="card-body px-4 py-4 d-flex align-items-start gap-3">
+                            <div class="vx-tile-icon vx-tile-icon-light"><i class="bi bi-cash-coin"></i></div>
+                            <div>
+                                <h3 class="h6 text-uppercase mb-2 vx-label-light">Ingreso mensual (MRR)</h3>
+                                <p class="fs-4 fw-semibold mb-1">{{ formatCOP(data.negocio.mrr_total) }}</p>
+                                <p class="mb-0 small opacity-85">Suma de contratos vigentes.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Fila 2: riesgo de churn y satisfacción -->
+        <div class="row g-3 mb-3">
+            <div class="col-lg-6">
+                <div class="vx-card h-100">
+                    <div class="card-body px-4 py-4">
+                        <h5 class="fw-semibold mb-1">Distribución de riesgo de churn</h5>
+                        <p class="text-muted small mb-3">Proporción de tickets clasificados como ALTO, MEDIO, BAJO o sin dato.</p>
+                        <div class="vx-chart">
+                            <canvas #riesgoChart></canvas>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Satisfacción / Sentimiento -->
             <div class="col-lg-6">
-                <div class="card rounded-4 shadow-sm h-100">
-                    <div class="card-body px-4">
-                        <h4 class="fw-semibold mb-3">Nivel de satisfacción</h4>
-                        <p class="text-muted small mb-3">Distribución de tickets según el sentimiento detectado en la interacción con el cliente.</p>
+                <div class="vx-card h-100">
+                    <div class="card-body px-4 py-4">
+                        <h5 class="fw-semibold mb-1">Nivel de satisfacción</h5>
+                        <p class="text-muted small mb-3">Sentimiento detectado en la interacción con el cliente.</p>
 
-                        <!-- Barra compuesta tipo KPI -->
                         <div class="mb-3">
-                            <div class="progress" style="height: 30px">
-                                <div class="progress-bar bg-success" role="progressbar" [style.width]="porcentajePositivo + '%'">{{ porcentajePositivo }}% satisfechos</div>
-                                <div class="progress-bar bg-warning text-dark" role="progressbar" [style.width]="porcentajeNeutro + '%'">{{ porcentajeNeutro }}% neutros</div>
-                                <div class="progress-bar bg-danger" role="progressbar" [style.width]="porcentajeNegativo + '%'">{{ porcentajeNegativo }}% insatisfechos</div>
+                            <div class="progress vx-progress" style="height: 28px">
+                                <div class="progress-bar vx-bar-navy-1" role="progressbar" [style.width]="porcentajePositivo + '%'">{{ porcentajePositivo }}%</div>
+                                <div class="progress-bar vx-bar-navy-2" role="progressbar" [style.width]="porcentajeNeutro + '%'">{{ porcentajeNeutro }}%</div>
+                                <div class="progress-bar vx-bar-navy-3" role="progressbar" [style.width]="porcentajeNegativo + '%'">{{ porcentajeNegativo }}%</div>
                             </div>
                         </div>
 
-                        <!-- Gráfico de barras sentimiento -->
-                        <div class="d-flex justify-content-center">
-                            <canvas #satisfaccionChart height="220"></canvas>
+                        <div class="vx-chart">
+                            <canvas #satisfaccionChart></canvas>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Top clientes en riesgo: gráfica + tabla -->
-        <div class="row g-3 mb-4">
-            <!-- Gráfica top clientes -->
+        <!-- Fila 3: tickets por estado y prioridad -->
+        <div class="row g-3 mb-3">
             <div class="col-lg-6">
-                <div class="card rounded-4 shadow-sm h-100">
-                    <div class="card-body px-4">
-                        <h4 class="fw-semibold mb-3">Top clientes por riesgo promedio</h4>
-                        <p class="text-muted small mb-3">Score promedio de churn por cliente en los últimos 30 días. Los clientes con mayor score deben ser priorizados en acciones de retención.</p>
-
-                        <div class="d-flex justify-content-center">
-                            <canvas #topClientesChart height="260"></canvas>
+                <div class="vx-card h-100">
+                    <div class="card-body px-4 py-4">
+                        <h5 class="fw-semibold mb-1">Tickets por estado</h5>
+                        <p class="text-muted small mb-3">Avance operativo de las solicitudes registradas.</p>
+                        <div class="vx-chart">
+                            <canvas #estadoChart></canvas>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Tabla de top clientes -->
             <div class="col-lg-6">
-                <div class="card rounded-4 shadow-sm h-100">
-                    <div class="card-body px-4">
+                <div class="vx-card h-100">
+                    <div class="card-body px-4 py-4">
+                        <h5 class="fw-semibold mb-1">Tickets por prioridad</h5>
+                        <p class="text-muted small mb-3">Urgencia asignada a las solicitudes.</p>
+                        <div class="vx-chart">
+                            <canvas #prioridadChart></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fila 4: tendencia -->
+        <div class="row g-3 mb-3">
+            <div class="col-12">
+                <div class="vx-card h-100">
+                    <div class="card-body px-4 py-4">
+                        <h5 class="fw-semibold mb-1">Tickets creados por día</h5>
+                        <p class="text-muted small mb-3">Volumen de solicitudes a lo largo del tiempo.</p>
+                        <div class="vx-chart-lg">
+                            <canvas #tendenciaChart></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fila 5: top clientes en riesgo (solo admin — no aplica a la vista de un solo cliente) -->
+        @if (data.contexto === 'ADMIN') {
+        <div class="row g-3 mb-4">
+            <div class="col-lg-6">
+                <div class="vx-card h-100">
+                    <div class="card-body px-4 py-4">
+                        <h5 class="fw-semibold mb-1">Top clientes por riesgo promedio</h5>
+                        <p class="text-muted small mb-3">Score promedio de churn por cliente. Priorizar acciones de retención en los más altos.</p>
+                        <div class="vx-chart-lg">
+                            <canvas #topClientesChart></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="vx-card h-100">
+                    <div class="card-body px-4 py-4">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h4 class="fw-bold mb-0">Detalle de clientes prioritarios</h4>
-                            <span class="badge rounded-pill text-bg-danger">{{ data.top_clientes.length }} clientes</span>
+                            <h5 class="fw-bold mb-0">Detalle de clientes prioritarios</h5>
+                            <span class="badge rounded-pill vx-badge-navy-3">{{ data.top_clientes.length }} clientes</span>
                         </div>
 
                         @if (data.top_clientes.length > 0) {
                             <div class="table-responsive">
-                                <table class="table table-hover align-middle mb-0">
-                                    <thead class="table-light">
+                                <table class="table vx-table table-hover align-middle mb-0">
+                                    <thead>
                                         <tr>
                                             <th>Cliente</th>
                                             <th>Tickets</th>
@@ -166,10 +274,10 @@
                                                     <span
                                                         class="badge"
                                                         [ngClass]="{
-                                                            'text-bg-danger': cliente.riesgo_predominante === 'ALTO',
-                                                            'text-bg-warning': cliente.riesgo_predominante === 'MEDIO',
-                                                            'text-bg-success': cliente.riesgo_predominante === 'BAJO',
-                                                            'text-bg-secondary': !cliente.riesgo_predominante,
+                                                            'vx-badge-navy-3': cliente.riesgo_predominante === 'ALTO',
+                                                            'vx-badge-navy-2': cliente.riesgo_predominante === 'MEDIO',
+                                                            'vx-badge-navy-1': cliente.riesgo_predominante === 'BAJO',
+                                                            'vx-badge-nd': !cliente.riesgo_predominante,
                                                         }"
                                                     >
                                                         {{ cliente.riesgo_predominante || "N/D" }}
@@ -177,13 +285,13 @@
                                                 </td>
                                                 <td class="text-center">
                                                     @if (cliente.riesgo_predominante === "ALTO") {
-                                                        <span class="badge text-bg-danger">Crítico</span>
+                                                        <span class="badge vx-badge-navy-3">Crítico</span>
                                                     } @else if (cliente.riesgo_predominante === "MEDIO") {
-                                                        <span class="badge text-bg-warning text-dark">Alerta</span>
+                                                        <span class="badge vx-badge-navy-2">Alerta</span>
                                                     } @else if (cliente.riesgo_predominante === "BAJO") {
-                                                        <span class="badge text-bg-success">Estable</span>
+                                                        <span class="badge vx-badge-navy-1">Estable</span>
                                                     } @else {
-                                                        <span class="badge text-bg-secondary">Sin dato</span>
+                                                        <span class="badge vx-badge-nd">Sin dato</span>
                                                     }
                                                 </td>
                                             </tr>
@@ -198,5 +306,6 @@
                 </div>
             </div>
         </div>
+        }
     }
 </div>

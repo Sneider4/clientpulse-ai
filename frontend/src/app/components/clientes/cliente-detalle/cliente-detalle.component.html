@@ -1,16 +1,19 @@
 @if (!loading && data) {
-    <div class="container my-4">
+    <div class="vx-container my-4">
         <!-- Header -->
-        <div class="mb-4">
-            <h1 class="fw-bold mb-1">{{ data.cliente.nombre }}</h1>
-            <p class="text-muted mb-0">Resumen de interacción de soporte, riesgo de churn y tickets recientes.</p>
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <div class="vx-tile-icon"><i class="bi bi-building"></i></div>
+            <div>
+                <h1 class="fw-bold mb-1">{{ data.cliente.nombre }}</h1>
+                <p class="text-muted mb-0">Resumen de interacción de soporte, riesgo de churn y tickets recientes.</p>
+            </div>
         </div>
 
-        <div class="row g-3 mb-4">
+        <div class="row g-3 mb-3">
             <div class="col-md-6">
-                <div class="card shadow-sm rounded-4 h-100">
+                <div class="vx-card h-100">
                     <div class="card-body p-4">
-                        <h3 class="card-title fw-bold mb-3">Información del cliente</h3>
+                        <h3 class="h5 fw-semibold mb-3">Información del cliente</h3>
                         <p class="mb-1">
                             <strong>NIT:</strong>
                             {{ data.cliente.nit || "N/D" }}
@@ -21,11 +24,13 @@
                         </p>
                         <p class="mb-1">
                             <strong>Inicio relación:</strong>
-                            {{ data.cliente.fecha_inicio_relacion ? (data.cliente.fecha_inicio_relacion | date) : "N/D" }}
+                            {{ data.cliente.fecha_inicio_relacion ? formateadorFecha(data.cliente.fecha_inicio_relacion) : "N/D" }}
                         </p>
-                        <p class="mb-0">
+                        <p class="mb-0 d-flex align-items-center gap-2">
                             <strong>Estado:</strong>
-                            {{ data.cliente.estado }}
+                            <span class="badge" [ngClass]="data.cliente.estado === 'ACTIVO' ? 'vx-badge-navy-2' : 'vx-badge-nd'">
+                                {{ data.cliente.estado }}
+                            </span>
                         </p>
                     </div>
                 </div>
@@ -33,9 +38,9 @@
 
             <!-- Resumen churn -->
             <div class="col-md-6">
-                <div class="card rounded-4 shadow-sm h-100">
+                <div class="vx-card h-100">
                     <div class="card-body p-4">
-                        <h3 class="card-title fw-bold mb-3">Resumen de churn</h3>
+                        <h3 class="h5 fw-semibold mb-3">Resumen de churn</h3>
 
                         <p class="mb-1">
                             <strong>Total tickets:</strong>
@@ -50,10 +55,10 @@
                             <span
                                 class="badge"
                                 [ngClass]="{
-                                    'text-bg-danger': data.resumen.riesgo_predominante === 'ALTO',
-                                    'text-bg-warning': data.resumen.riesgo_predominante === 'MEDIO',
-                                    'text-bg-success': data.resumen.riesgo_predominante === 'BAJO',
-                                    'text-bg-secondary': !data.resumen.riesgo_predominante,
+                                    'vx-badge-crit': data.resumen.riesgo_predominante === 'ALTO',
+                                    'vx-badge-warn': data.resumen.riesgo_predominante === 'MEDIO',
+                                    'vx-badge-good': data.resumen.riesgo_predominante === 'BAJO',
+                                    'vx-badge-nd': !data.resumen.riesgo_predominante,
                                 }"
                             >
                                 {{ data.resumen.riesgo_predominante || "N/D" }}
@@ -62,28 +67,20 @@
 
                         <ul class="list-unstyled mb-0">
                             <li class="d-flex justify-content-between align-items-center mb-1">
-                                <span class="badge text-bg-danger">ALTO</span>
-                                <span class="fw-semibold">
-                                    {{ getCantidadPorRiesgo("ALTO") }}
-                                </span>
+                                <span class="badge vx-badge-crit">ALTO</span>
+                                <span class="fw-semibold">{{ getCantidadPorRiesgo("ALTO") }}</span>
                             </li>
                             <li class="d-flex justify-content-between align-items-center mb-1">
-                                <span class="badge text-bg-warning">MEDIO</span>
-                                <span class="fw-semibold">
-                                    {{ getCantidadPorRiesgo("MEDIO") }}
-                                </span>
+                                <span class="badge vx-badge-warn">MEDIO</span>
+                                <span class="fw-semibold">{{ getCantidadPorRiesgo("MEDIO") }}</span>
                             </li>
                             <li class="d-flex justify-content-between align-items-center mb-1">
-                                <span class="badge text-bg-success">BAJO</span>
-                                <span class="fw-semibold">
-                                    {{ getCantidadPorRiesgo("BAJO") }}
-                                </span>
+                                <span class="badge vx-badge-good">BAJO</span>
+                                <span class="fw-semibold">{{ getCantidadPorRiesgo("BAJO") }}</span>
                             </li>
                             <li class="d-flex justify-content-between align-items-center">
-                                <span class="badge text-bg-secondary">N/D</span>
-                                <span class="fw-semibold">
-                                    {{ getCantidadPorRiesgo("N/D") }}
-                                </span>
+                                <span class="badge vx-badge-nd">N/D</span>
+                                <span class="fw-semibold">{{ getCantidadPorRiesgo("N/D") }}</span>
                             </li>
                         </ul>
                     </div>
@@ -91,102 +88,134 @@
             </div>
         </div>
 
-        <div class="mb-4">
-            <h3 class="fw-bold mb-3">Contratos</h3>
-            @if (data.contratos.length > 0) {
-                <div class="table-responsive">
-                    <table class="table table-bordered table-sm align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>ID Contrato</th>
-                                <th>Proyecto</th>
-                                <th>Inicio</th>
-                                <th>Fin</th>
-                                <th>Estado</th>
-                                <th>Nivel servicio</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @for (ct of data.contratos; track $index) {
+        <div class="vx-card mb-3">
+            <div class="card-body p-4">
+                <h3 class="h5 fw-semibold mb-3">Contratos</h3>
+                @if (data.contratos.length > 0) {
+                    <div class="table-responsive">
+                        <table class="table vx-table table-hover align-middle mb-0">
+                            <thead>
                                 <tr>
-                                    <td class="text-center">{{ ct.id_contrato }}</td>
-                                    <td>{{ ct.nombre_proyecto }}</td>
-                                    <td>{{ formateadorFecha(ct.fecha_inicio) }}</td>
-                                    <td>{{ formateadorFecha(ct.fecha_fin) }}</td>
-                                    <td>{{ ct.estado }}</td>
-                                    <td class="text-center">{{ ct.nivel_servicio || "N/D" }}</td>
+                                    <th>ID Contrato</th>
+                                    <th>Proyecto</th>
+                                    <th>Inicio</th>
+                                    <th>Fin</th>
+                                    <th>Estado</th>
+                                    <th>Nivel servicio</th>
                                 </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            } @else {
-                <div class="col-12 text-center mb-5">
-                    <small class="fw-bold" style="color: rgb(124, 124, 124); font-size: 25px">El cliente aun no tiene ningún contrato</small>
-                </div>
-            }
+                            </thead>
+                            <tbody>
+                                @for (ct of data.contratos; track $index) {
+                                    <tr>
+                                        <td>{{ ct.id_contrato }}</td>
+                                        <td class="fw-semibold">{{ ct.nombre_proyecto }}</td>
+                                        <td>{{ formateadorFecha(ct.fecha_inicio) }}</td>
+                                        <td>{{ formateadorFecha(ct.fecha_fin) || "-" }}</td>
+                                        <td>
+                                            <span class="badge" [ngClass]="ct.estado === 'VIGENTE' ? 'vx-badge-navy-2' : 'vx-badge-nd'">
+                                                {{ ct.estado }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge" [ngClass]="{
+                                                'vx-badge-navy-4': ct.nivel_servicio === 'DIAMOND',
+                                                'vx-badge-navy-3': ct.nivel_servicio === 'GOLD',
+                                                'vx-badge-navy-2': ct.nivel_servicio === 'SILVER',
+                                                'vx-badge-navy-1': ct.nivel_servicio === 'BRONZE',
+                                                'vx-badge-nd': !ct.nivel_servicio
+                                            }">
+                                                {{ ct.nivel_servicio || "N/D" }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                } @else {
+                    <div class="alert alert-info mb-0">El cliente aún no tiene ningún contrato.</div>
+                }
+            </div>
         </div>
 
         <!-- Tickets recientes -->
-        <div class="mb-2">
-            <h3 class="fw-bold mb-3">Tickets recientes</h3>
+        <div class="vx-card mb-3">
+            <div class="card-body p-4">
+                <h3 class="h5 fw-semibold mb-3">Tickets recientes</h3>
 
-            @if (data.tickets_recientes.length > 0) {
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>ID</th>
-                                <th>Título</th>
-                                <th>Contrato</th>
-                                <th>Prioridad</th>
-                                <th>Estado</th>
-                                <th>Sentimiento</th>
-                                <th>Riesgo</th>
-                                <th>Score</th>
-                                <th>Fecha</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @for (t of data.tickets_recientes; track t.id_ticket) {
+                @if (data.tickets_recientes.length > 0) {
+                    <div class="table-responsive">
+                        <table class="table vx-table table-hover align-middle mb-0">
+                            <thead>
                                 <tr>
-                                    <td>{{ t.id_ticket }}</td>
-                                    <td class="fw-semibold" [routerLink]="['/detalle-ticket', t.id_ticket]" style="cursor: pointer">
-                                        {{ t.titulo }}
-                                    </td>
-                                    <td>{{ t.id_contrato }} - {{ t.nombre_proyecto }}</td>
-                                    <td>{{ t.prioridad }}</td>
-                                    <td>{{ t.estado }}</td>
-                                    <td>{{ t.sentimiento || "N/D" }}</td>
-                                    <td>{{ t.riesgo_churn || "N/D" }}</td>
-                                    <td>{{ t.score_churn ?? "-" }}</td>
-                                    <td>{{ t.fecha_creacion | date: "short" }}</td>
+                                    <th>ID</th>
+                                    <th>Título</th>
+                                    <th>Servicio</th>
+                                    <th>Prioridad</th>
+                                    <th>Estado</th>
+                                    <th>Sentimiento</th>
+                                    <th>Riesgo</th>
+                                    <th>Score</th>
+                                    <th>Fecha</th>
                                 </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            } @else {
-                <div class="col-12 text-center mb-5">
-                    <div class="d-flex flex-column align-items-center">
-                        <i class="bi bi-hand-thumbs-up fs-1" style="color: rgb(124, 124, 124)"></i>
-                        <small class="fw-bold" style="color: rgb(124, 124, 124); font-size: 25px">Este cliente aun no tiene tickets registrados</small>
+                            </thead>
+                            <tbody>
+                                @for (t of data.tickets_recientes; track t.id_ticket) {
+                                    <tr>
+                                        <td>{{ t.id_ticket }}</td>
+                                        <td class="fw-semibold" [routerLink]="['/detalle-ticket', t.id_ticket]" style="cursor: pointer">
+                                            {{ t.titulo }}
+                                        </td>
+                                        <td>{{ t.nombre_servicio || "Sin especificar" }}</td>
+                                        <td>{{ t.prioridad }}</td>
+                                        <td>{{ t.estado }}</td>
+                                        <td>
+                                            <span class="badge" [ngClass]="{
+                                                'vx-badge-good': t.sentimiento === 'POSITIVO',
+                                                'vx-badge-crit': t.sentimiento === 'NEGATIVO',
+                                                'vx-badge-nd': !t.sentimiento || t.sentimiento === 'NEUTRO'
+                                            }">
+                                                {{ t.sentimiento || "N/D" }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge" [ngClass]="{
+                                                'vx-badge-crit': t.riesgo_churn === 'ALTO',
+                                                'vx-badge-warn': t.riesgo_churn === 'MEDIO',
+                                                'vx-badge-good': t.riesgo_churn === 'BAJO',
+                                                'vx-badge-nd': !t.riesgo_churn
+                                            }">
+                                                {{ t.riesgo_churn || "N/D" }}
+                                            </span>
+                                        </td>
+                                        <td>{{ t.score_churn ?? "-" }}</td>
+                                        <td>{{ t.fecha_creacion | date: "short" }}</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
                     </div>
-                </div>
-            }
+                } @else {
+                    <div class="d-flex flex-column align-items-center py-4">
+                        <i class="bi bi-hand-thumbs-up fs-1 text-muted mb-2"></i>
+                        <p class="fw-semibold text-muted mb-0">Este cliente aún no tiene tickets registrados.</p>
+                    </div>
+                }
+            </div>
         </div>
+
         <div class="mt-3">
-            <button class="btn btn-outline-secondary d-flex align-items-center" (click)="goBack()"> <i class="bi bi-box-arrow-left fs-4 me-2"></i>Volver</button>
+            <button class="btn btn-outline-secondary d-flex align-items-center" (click)="goBack()"><i class="bi bi-box-arrow-left fs-4 me-2"></i>Volver</button>
         </div>
     </div>
 }
 @if (loading) {
-    <div class="container my-3">
+    <div class="vx-container my-3">
         <div class="alert alert-info mb-0">Cargando detalle del cliente...</div>
     </div>
 }
 @if (errorMessage) {
-    <div class="container my-3">
+    <div class="vx-container my-3">
         <div class="alert alert-danger mb-0">
             {{ errorMessage }}
         </div>

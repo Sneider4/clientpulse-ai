@@ -6,6 +6,7 @@ import clientesRouter from './clientes.routes';
 import contratosRouter from './contratros.routes';
 import authRoutes from './auth.routes';
 import adminRouter from './admin.routes';
+import equipoRouter from './equipo.routes';
 
 
 const router = Router();
@@ -35,5 +36,8 @@ router.use('/contratos', contratosRouter);
 
 // Rutas de administración (solo ADMIN_GLOBAL)
 router.use('/admin', adminRouter);
+
+// Rutas de equipo (Supervisor gestiona sus propios usuarios finales)
+router.use('/equipo', equipoRouter);
 
 export default router;
