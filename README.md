@@ -1,5 +1,7 @@
 # ClientPulse AI
 
+> ⚠️ **Proyecto en desarrollo activo.** Algunas pantallas y flujos todavía están incompletos o pueden cambiar sin aviso. No usar en producción real.
+
 **Demo en vivo:** https://clientpulse-ai-seven.vercel.app
 
 Plataforma SaaS de análisis de soporte al cliente con inteligencia artificial. Detecta sentimiento, frustración y riesgo de abandono (churn) en los tickets de soporte usando Google Gemini, y presenta un dashboard analítico en tiempo real para equipos de Customer Success.
@@ -234,6 +236,12 @@ psql -U postgres -d vortex -f database/schema.sql
 node database/seed.js
 ```
 
+**Opción C — SQL plano (para pegar en el editor SQL de Neon u otro proveedor donde no puedes correr Node/bcrypt):**
+```bash
+psql -U postgres -d vortex -f database/seed.sql
+```
+`database/seed.sql` incluye el esquema completo + un reset total (`TRUNCATE ... RESTART IDENTITY CASCADE`) + los mismos datos de prueba que `seed.js`, con la contraseña `1234` ya pre-hasheada. Es destructivo: borra todo el contenido de negocio antes de insertar.
+
 ### 3. Configurar el backend
 
 ```bash
@@ -294,11 +302,16 @@ App disponible en `http://localhost:4200`
 | Andrés Vargas | sup2@bancol.com | 1234 | SUPERVISOR | Bancol Finanzas — todos los módulos |
 | Camila Ruiz | agente1@techcorp.com | 1234 | AGENTE | TechCorp — solo dashboard y tickets |
 | David Morales | agente2@techcorp.com | 1234 | AGENTE | TechCorp — solo dashboard y tickets |
+| Diego Ramírez | agente3@eduplus.com | 1234 | AGENTE | EduPlus — solo dashboard y tickets |
 | Sofía Herrera | viewer@eduplus.com | 1234 | VISUALIZADOR | EduPlus — solo lectura, módulos limitados |
 | Pedro Gómez | cliente1@techcorp.com | 1234 | USUARIO_FINAL | TechCorp — solo puede crear y ver sus propios tickets |
+| Marta Ríos | cliente2@techcorp.com | 1234 | USUARIO_FINAL | TechCorp — solo puede crear y ver sus propios tickets |
+| Jorge Salazar | usuario1@bancol.com | 1234 | USUARIO_FINAL | Bancol — solo puede crear y ver sus propios tickets |
+| Valentina Cruz | estudiante1@eduplus.com | 1234 | USUARIO_FINAL | EduPlus — solo puede crear y ver sus propios tickets |
 
 > **EduPlus** tiene únicamente los módulos DASHBOARD y TICKETS habilitados, lo que permite demostrar la restricción de acceso por cliente.
-> **Pedro Gómez** es el "cliente del cliente": presenta tickets sobre los servicios de TechCorp sin ver contratos, precios ni tickets de otros usuarios.
+> Los usuarios `USUARIO_FINAL` son el "cliente del cliente": presentan tickets sobre los servicios de su empresa sin ver contratos, precios ni tickets de otros usuarios.
+> El seed también incluye un ticket en estado `BLOQUEADO_POR_SEGURIDAD` (Bancol) para probar la detección de phishing.
 
 ## Estructura del proyecto
 
@@ -333,7 +346,8 @@ clientpulse-ai/
 │           └── admin.service   # HTTP client para el panel admin
 └── database/
     ├── schema.sql              # Tablas, constraints e índices
-    ├── seed.js                 # Script Node.js con datos de prueba
+    ├── seed.js                 # Script Node.js con datos de prueba (requiere bcrypt)
+    ├── seed.sql                # Mismo seed en SQL plano (esquema + reset + datos), para Neon u otros
     └── migrate_*.js            # Migraciones incrementales idempotentes
 ```
 

@@ -135,7 +135,9 @@ CREATE TABLE IF NOT EXISTS public.tickets (
     descripcion        TEXT         NOT NULL,
     tipo               VARCHAR(20),
     prioridad          VARCHAR(20),
-    estado             VARCHAR(20)  DEFAULT 'ENTREGADO',
+    -- 30 (no 20): debe caber el literal 'BLOQUEADO_POR_SEGURIDAD' (24 chars)
+    -- que usa ticket.service.ts al detectar phishing.
+    estado             VARCHAR(30)  DEFAULT 'ENTREGADO',
     fecha_creacion     TIMESTAMP    NOT NULL DEFAULT NOW(),
     fecha_cierre       TIMESTAMP,
     -- Quién presentó el ticket (usuario final o personal de la empresa cliente).
@@ -155,6 +157,8 @@ ALTER TABLE public.tickets
     ADD COLUMN IF NOT EXISTS id_agente_asignado INTEGER REFERENCES public.usuarios(id_usuario);
 ALTER TABLE public.tickets
     ALTER COLUMN id_contrato DROP NOT NULL;
+ALTER TABLE public.tickets
+    ALTER COLUMN estado TYPE VARCHAR(30);
 
 -- ────────────────────────────────────────────
 -- MENSAJES DE TICKET (conversación: respuestas visibles para el cliente +

@@ -1,4 +1,15 @@
-.vx-nota-interna {
+.vx-mensaje-item {
+    border-radius: var(--vx-radius-md);
+    border: 1px solid var(--vx-grid);
+    box-shadow: var(--vx-shadow-sm);
+}
+
+.vx-mensaje-respuesta {
+    background-color: var(--vx-sage-softer);
+    border-color: var(--vx-sage-soft);
+}
+
+.vx-mensaje-nota {
     background-color: #fff8e1;
-    border: 1px solid #ffe082;
+    border-color: #ffe082;
 }
